@@ -8,8 +8,10 @@ import {
   Target,
   BarChart3,
   ChevronRight,
+  Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "lucide-react";
 
 const HomePage = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -31,13 +33,19 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
-
       {/* 2. Hero Section */}
       <section className="max-w-7xl mx-auto px-8 py-24 flex flex-col items-center text-center">
         <motion.div {...fadeIn}>
-          <span className="px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-bold mb-6 inline-block">
-            V1.0 ШИНЭЭР ГАРЛАА
-          </span>
+          <div className="max-w-7xl mx-auto px-8 flex flex-col items-center text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold mb-8 uppercase tracking-widest"
+            >
+              <Zap size={14} className="fill-current" />
+              <span>V1.0 Шинээр гарлаа</span>
+            </motion.div>
+          </div>
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 leading-[1.1]">
             Ирээдүйн Юникорныг <br /> Өнөөдөр Дэмжье
           </h1>
@@ -100,39 +108,70 @@ const HomePage = () => {
       </section>
 
       {/* 4. Features Section */}
-      <section className="bg-slate-50 dark:bg-slate-900/50 py-24 transition-colors">
-        <div className="max-w-7xl mx-auto px-8 text-center">
-          <h2 className="text-3xl font-bold mb-16 underline decoration-blue-500 underline-offset-8">
-            Системийн давуу талууд
-          </h2>
+      <section className="relative py-32 bg-slate-50/50 dark:bg-[#060b18] transition-colors overflow-hidden">
+        {/* Background Decor - Илүү чамин харагдуулах гэрлийн эффект */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/5 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-8">
+          {/* Header Part */}
+          <div className="text-center max-w-2xl mx-auto mb-20">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl md:text-5xl font-black mb-6 tracking-tight dark:text-white"
+            >
+              Системийн <span className="text-blue-600">давуу талууд</span>
+            </motion.h2>
+            <p className="text-slate-500 dark:text-slate-400 text-lg">
+              Зөвхөн хөрөнгө оруулалт биш, тогтвортой өсөлтийг бий болгох дэд
+              бүтэц.
+            </p>
+          </div>
+
+          {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
                 title: "Хөрөнгө оруулалт",
-                desc: "Шилдэг төслүүдийг нэг дороос харж, хөрөнгө оруулах боломж.",
-                icon: <Target className="w-6 h-6" />,
+                desc: "Шилдэг төслүүдийг нэг дороос харж, эрсдэл багатайгаар хөрөнгө оруулах боломж.",
+                icon: <Target className="w-7 h-7" />,
+                href: "/project"
               },
               {
                 title: "Менторшип",
-                desc: "Туршлагатай бизнес эрхлэгчдээс зааварчилгаа авах экосистем.",
-                icon: <Rocket className="w-6 h-6" />,
+                desc: "Туршлагатай бизнес эрхлэгчид болон салбарын мэргэжилтнүүдээс зааварчилгаа авах.",
+                icon: <Rocket className="w-7 h-7" />,
               },
               {
                 title: "Дата шинжилгээ",
-                desc: "Төслийн явц болон зах зээлийн өсөлтийг хянах хянах самбар.",
-                icon: <BarChart3 className="w-6 h-6" />,
+                desc: "Төслийн явц болон зах зээлийн бодит өсөлтийг хянах ухаалаг хянах самбар.",
+                icon: <BarChart3 className="w-7 h-7" />,
               },
             ].map((feature, i) => (
+              
               <motion.div
                 key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                viewport={{ once: true }}
                 whileHover={{ y: -10 }}
-                className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm"
+                className="group p-10 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 transition-all duration-500 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10"
               >
-                <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/50 rounded-xl mb-6 flex items-center justify-center text-blue-600 dark:text-blue-400 mx-auto">
+                {/* Icon Container */}
+                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl mb-8 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-inner">
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+
+                {/* Text Content */}
+                <h3 className="text-2xl font-bold mb-4 tracking-tight dark:text-white">
+                  {feature.title}
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-lg">
                   {feature.desc}
                 </p>
               </motion.div>

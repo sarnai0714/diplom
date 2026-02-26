@@ -26,12 +26,18 @@ export default function Header() {
     <header className="flex justify-between items-center px-8 py-5 bg-white dark:bg-slate-950 border-b dark:border-slate-800 sticky top-0 z-50">
       {/* Лого */}
       <div className="flex items-center gap-2">
-        <Rocket className="w-8 h-8 text-blue-600" />
         <Link
           href="/"
           className="text-2xl font-bold text-blue-600 tracking-tight"
         >
-          Startup<span className="text-slate-800 dark:text-white">Hub</span>
+          <div className="flex items-center gap-2 font-black text-2xl tracking-tighter">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Rocket size={18} className="text-white" />
+            </div>
+            <span>
+              UNICORN<span className="text-blue-600">.</span>
+            </span>
+          </div>
         </Link>
       </div>
 
@@ -84,6 +90,13 @@ export default function Header() {
                   >
                     Profile
                   </Link>
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Favourite
+                  </Link>
 
                   <button
                     onClick={() => {
@@ -100,12 +113,21 @@ export default function Header() {
             </AnimatePresence>
           </div>
         ) : (
-          <Link
-            href="/login"
-            className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
-          >
-            Login
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
+            >
+              Нэвтрэх
+            </Link>
+
+            <Link
+              href="/register"
+              className="px-6 py-2 border border-blue-600 text-blue-600 rounded-xl font-semibold hover:bg-blue-50 dark:hover:bg-slate-800 transition"
+            >
+              Бүртгүүлэх
+            </Link>
+          </div>
         )}
       </div>
     </header>

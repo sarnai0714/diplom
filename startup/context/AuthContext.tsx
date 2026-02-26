@@ -7,6 +7,7 @@ type User = { id: string; email: string; role: string };
 type AuthContextType = {
   user: User | null;
   login: (user: User) => void;
+  register: (user: User) => void;
   logout: () => void;
 };
 
@@ -25,12 +26,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
+  const register = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
   };
 
-  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
+
+
+  return <AuthContext.Provider value={{ user, login, register, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

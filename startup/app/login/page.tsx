@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -76,9 +77,12 @@ export default function LoginPage() {
         {/* Extra */}
         <div className="mt-6 text-center text-sm text-slate-500">
           Бүртгэл байхгүй юу?{" "}
-          <span className="text-blue-600 cursor-pointer hover:underline">
+          <Link
+            href="/register"
+            className="text-blue-600 cursor-pointer hover:underline"
+          >
             Бүртгүүлэх
-          </span>
+          </Link>
         </div>
       </motion.div>
     </div>
