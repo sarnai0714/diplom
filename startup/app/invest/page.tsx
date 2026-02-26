@@ -34,7 +34,7 @@ const investors = [
 
 export default function InvestorsSection() {
   return (
-    <section className="bg-slate-50/50 dark:bg-slate-950/50 py-24 px-6">
+    <section className="bg-slate-50/50 dark:bg-[#020617] py-24 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
