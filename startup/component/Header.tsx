@@ -43,15 +43,21 @@ export default function Header() {
 
       {/* Гол навигац */}
       <nav className="hidden md:flex space-x-8 font-medium text-slate-600 dark:text-slate-400">
-        {["Нүүр", "Төслүүд", "Хөрөнгө оруулагч", "Бидний тухай"].map((item) => (
-          <a
-            key={item}
-            href="#"
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition"
-          >
-            {item}
-          </a>
-        ))}
+        <Link href="/" className="hover:text-blue-600 transition">
+          Нүүр
+        </Link>
+
+        <Link href="/startup" className="hover:text-blue-600 transition">
+          Төслүүд
+        </Link>
+
+        <Link href="/invest" className="hover:text-blue-600 transition">
+          Хөрөнгө оруулагч
+        </Link>
+
+        <Link href="/about" className="hover:text-blue-600 transition">
+          Бидний тухай
+        </Link>
       </nav>
 
       {/* Хэрэглэгч болон Dark Mode */}
