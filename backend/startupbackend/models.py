@@ -202,11 +202,13 @@ class StartupApplication(models.Model):
         verbose_name="Хөгжүүлэлтийн шат"
     )
 
-    pitch_deck_link = models.URLField(
+    pitch_deck_link = models.FileField(
+        upload_to='description/',
         max_length=500,
-        verbose_name="Pitch Deck Link"
+        verbose_name="Pitch Deck Link",
+        null=True,
+        blank=True
     )
-
     demo_link = models.URLField(
         max_length=500,
         blank=True,
