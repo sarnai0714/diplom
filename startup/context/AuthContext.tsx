@@ -1,13 +1,13 @@
-"use client"; // ← ҮНДСЭН
+"use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type User = { id: string; email: string; role: string };
+type User = { id: string; username: string; email: string; role: string };
 
 type AuthContextType = {
   user: User | null;
-  login: (user: User) => void;
-  register: (user: User) => void;
+  login: (username: string, password: string) => Promise<void>;
+  register: (userData: any) => Promise<void>;
   logout: () => void;
 };
 
@@ -17,34 +17,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("user");
-    if (saved) setUser(JSON.parse(saved));
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+  // 🔐 Нэвтрэх функц - username ашиглана
+  const login = async (username: string, password: string) => {
+    const res = await fetch("http://127.0.0.1:8000/api/token/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }), 
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      localStorage.setItem("access", data.access);
+      localStorage.setItem("refresh", data.refresh);
+      
+      // Хэрэглэгчийн мэдээллийг Djoser-оос авах
+      const userRes = await fetch("http://127.0.0.1:8000/auth/users/me/", {
+        headers: { Authorization: `Bearer ${data.access}` },
+      });
+      
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+      }
+    } else {
+      throw new Error("Хэрэглэгчийн нэр эсвэл нууц үг буруу байна.");
+    }
   };
 
-  const register = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-  };
+  // 📝 Бүртгүүлэх функц
+const register = async (userData: any) => {
+  const res = await fetch("http://127.0.0.1:8000/auth/register/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    const errorMessage = Object.values(errorData).flat().join(" ");
+    throw new Error(errorMessage || "Бүртгүүлэхэд алдаа гарлаа.");
+  }
+  
+  // Амжилттай болвол юу ч хийхгүй (эсвэл return true)
+  return login;
+};
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("user");
+    localStorage.clear();
+    window.location.href = "/login";
   };
 
-
-
-  return <AuthContext.Provider value={{ user, login, register, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-  return context;
-}
+export const useAuth = () => useContext(AuthContext)!;
