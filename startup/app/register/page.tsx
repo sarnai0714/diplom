@@ -32,7 +32,7 @@ export default function RegisterPage() {
         password: form.password,
         role: form.role,
       });
-      router.push("/"); // Амжилттай болвол нүүр хуудас руу
+      router.push("/login"); // Амжилттай болвол нүүр хуудас руу
     } catch (err: any) {
       alert("Алдаа: " + err.message);
     }
@@ -41,7 +41,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] px-4">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border dark:border-slate-800">
-        <h2 className="text-2xl font-bold text-center mb-6 text-slate-800 dark:text-white">Бүртгүүлэх</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-slate-800 dark:text-white">
+          Бүртгүүлэх
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
@@ -57,7 +59,7 @@ export default function RegisterPage() {
             className="w-full px-4 py-3 rounded-xl border bg-slate-100 dark:bg-slate-800 dark:border-slate-700"
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
-          <select 
+          <select
             className="w-full px-4 py-3 rounded-xl border bg-slate-100 dark:bg-slate-800 dark:border-slate-700"
             onChange={(e) => setForm({ ...form, role: e.target.value })}
           >
@@ -76,9 +78,14 @@ export default function RegisterPage() {
             placeholder="Нууц үг давтах"
             required
             className="w-full px-4 py-3 rounded-xl border bg-slate-100 dark:bg-slate-800 dark:border-slate-700"
-            onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, confirmPassword: e.target.value })
+            }
           />
-          <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">
+          <button
+            type="submit"
+            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition"
+          >
             Бүртгэл үүсгэх
           </button>
         </form>
