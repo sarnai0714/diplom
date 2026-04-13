@@ -26,19 +26,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await fetch("http://127.0.0.1:8000/api/token/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }), 
+      body: JSON.stringify({ username, password }),
     });
 
     if (res.ok) {
       const data = await res.json();
       localStorage.setItem("access", data.access);
       localStorage.setItem("refresh", data.refresh);
-      
+
       // Хэрэглэгчийн мэдээллийг Djoser-оос авах
       const userRes = await fetch("http://127.0.0.1:8000/auth/users/me/", {
         headers: { Authorization: `Bearer ${data.access}` },
       });
-      
+
       if (userRes.ok) {
         const userData = await userRes.json();
         setUser(userData);
@@ -50,22 +50,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // 📝 Бүртгүүлэх функц
-const register = async (userData: any) => {
-  const res = await fetch("http://127.0.0.1:8000/auth/register/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  });
+  const register = async (userData: any) => {
+    const res = await fetch("http://127.0.0.1:8000/auth/register/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+    });
 
-  if (!res.ok) {
-    const errorData = await res.json();
-    const errorMessage = Object.values(errorData).flat().join(" ");
-    throw new Error(errorMessage || "Бүртгүүлэхэд алдаа гарлаа.");
-  }
-  
-  // Амжилттай болвол юу ч хийхгүй (эсвэл return true)
-  return login;
-};
+    if (!res.ok) {
+      const errorData = await res.json();
+      const errorMessage = Object.values(errorData).flat().join(" ");
+      throw new Error(errorMessage || "Бүртгүүлэхэд алдаа гарлаа.");
+    }
+  };
 
   const logout = () => {
     setUser(null);

@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from django.core.validators import MaxValueValidator, MinValueValidator
 # ===================================================================
 # I. ХЭРЭГЛЭГЧИЙН УДИРДЛАГА (USERS & ROLES)
 # ===================================================================
@@ -29,155 +29,10 @@ class CustomUser(AbstractUser):
 
 class Startup(models.Model):
 
-    STAGE_CHOICES = [
-        ('Idea', 'Idea'),
-        ('MVP', 'MVP'),
-        ('Seed', 'Seed'),
-        ('Growth', 'Growth'),
-    ]
-
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
         related_name="startups"
-    )
-
-    name = models.CharField(max_length=255)
-    industry = models.CharField(max_length=255)
-    stage = models.CharField(max_length=50, choices=STAGE_CHOICES)
-
-    # Funding information
-    funding_goal = models.DecimalField(max_digits=15, decimal_places=2)
-    raised_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-
-    equity_offered = models.FloatField(
-        blank=True,
-        null=True
-    )
-
-    # Startup description
-    pitch = models.CharField(max_length=500)
-    description = models.TextField()
-
-    video_url = models.URLField(blank=True, null=True)
-    image_url = models.URLField(blank=True, null=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['industry']),
-            models.Index(fields=['stage']),
-        ]
-
-    def __str__(self):
-        return self.name
-
-
-# ===================================================================
-# III. TEAM MEMBERS
-# ===================================================================
-
-class TeamMember(models.Model):
-
-    ROLE_CHOICES = (
-        ('leader', 'Ахлагч'),
-        ('member', 'Гишүүн'),
-    )
-
-    startup = models.ForeignKey(
-        Startup,
-        on_delete=models.CASCADE,
-        related_name="team_members"
-    )
-
-    name = models.CharField(max_length=255)
-
-    role = models.CharField(
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default='member',
-        verbose_name="Төрөл"
-    )
-
-    image = models.URLField(blank=True, null=True)
-    linkedin_url = models.URLField(blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.get_role_display()}) - {self.startup.name}"
-
-
-# ===================================================================
-# IV. INVESTOR PROFILE
-# ===================================================================
-
-class Investor(models.Model):
-
-    user = models.OneToOneField(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name="investor_profile"
-    )
-
-    company_name = models.CharField(max_length=255)
-    investment_range = models.CharField(max_length=255)
-    focus_industry = models.CharField(max_length=255)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.company_name
-
-
-# ===================================================================
-# V. INVESTMENTS
-# ===================================================================
-
-class Investment(models.Model):
-
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
-
-    startup = models.ForeignKey(
-        Startup,
-        on_delete=models.CASCADE,
-        related_name="investments"
-    )
-
-    investor = models.ForeignKey(
-        Investor,
-        on_delete=models.CASCADE,
-        related_name="investments"
-    )
-
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-        return f"{self.investor.company_name} → {self.startup.name} (${self.amount})"
-
-
-# ===================================================================
-# VI. STARTUP APPLICATION
-# ===================================================================
-
-class StartupApplication(models.Model):
-
-    user = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name="applications",
-        null=True,
-        blank=True
     )
 
     startup_name = models.CharField(
@@ -216,19 +71,35 @@ class StartupApplication(models.Model):
         verbose_name="Demo / Website"
     )
 
+    equity_offered = models.DecimalField(
+        max_digits=5, decimal_places=2,
+        verbose_name="Эзэмшил хувь (%)"
+    )
+
+
     fund_amount = models.DecimalField(
         max_digits=15,
         decimal_places=2,
         verbose_name="Татах дүн ($)"
     )
 
-    equity_offered = models.FloatField(
-        verbose_name="Эзэмшил хувь (%)"
+    raised_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        verbose_name="Цугласан хөрөнгө"
     )
 
     fund_purpose = models.TextField(
         verbose_name="Ашиглах зорилго"
     )
+
+    description = models.TextField()
+
+    image_url = models.FileField(
+        upload_to='images/',
+        max_length=500,
+        verbose_name="Images",
+        null=True,
+        blank=True)
 
     founder_name = models.CharField(
         max_length=255,
@@ -264,14 +135,6 @@ class StartupApplication(models.Model):
         default='pending'
     )
 
-    approved_startup = models.OneToOneField(
-        Startup,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="application_source"
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -282,3 +145,244 @@ class StartupApplication(models.Model):
 
     def __str__(self):
         return f"{self.startup_name} - {self.status}"
+
+
+# ===================================================================
+# III. TEAM MEMBERS
+# ===================================================================
+
+class TeamMember(models.Model):
+
+    ROLE_CHOICES = (
+        ('leader', 'Ахлагч'),
+        ('member', 'Гишүүн'),
+    )
+
+    startup = models.ForeignKey(
+        Startup,
+        on_delete=models.CASCADE,
+        related_name="team_members"
+    )
+
+    name = models.CharField(max_length=255)
+
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='member',
+        verbose_name="Төрөл"
+    )
+
+    image = models.URLField(blank=True, null=True)
+    linkedin_url = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_role_display()}) - {self.startup.startup_name}"
+
+
+# ===================================================================
+# IV. INVESTOR PROFILE 
+# ===================================================================
+
+class Investor(models.Model):
+    user = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="investor_profile"
+    )
+
+    # Step 1: Байгууллагын үндсэн мэдээлэл
+    company_name = models.CharField(
+        max_length=255, 
+        verbose_name="Байгууллагын нэр"
+    )
+    registration_number = models.CharField(
+        max_length=20, 
+        unique=True, 
+        verbose_name="Регистрийн дугаар"
+    )
+    website = models.URLField(
+        max_length=500, 
+        blank=True, 
+        null=True, 
+        verbose_name="Вэбсайт"
+    )
+
+    # Step 2: Төлөөлөгчийн мэдээлэл
+    representative_name = models.CharField(
+        max_length=255, 
+        verbose_name="Төлөөлөх албан тушаалтан"
+    )
+    contact_email = models.EmailField(
+        verbose_name="Холбоо барих мэйл"
+    )
+
+    # Нэмэлт (Таны хуучин моделд байсан салбар болон хөрөнгө оруулалтын дүн)
+    investment_range = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        verbose_name="Хөрөнгө оруулалтын хэмжээ"
+    )
+    focus_industry = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        verbose_name="Сонирхдог салбар"
+    )
+
+    # Step 3: Баримт бичиг
+    certificate_file = models.FileField(
+        upload_to='investor_certificates/',
+        null=True,
+        blank=True,
+        verbose_name="Гэрчилгээний хуулбар"
+    )
+
+    is_verified = models.BooleanField(
+        default=False, 
+        verbose_name="Баталгаажсан эсэх"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.company_name} ({self.registration_number})"
+
+    class Meta:
+        verbose_name = "Хөрөнгө оруулагч"
+        verbose_name_plural = "Хөрөнгө оруулагчид"
+
+
+# ===================================================================
+# V. INVESTMENTS
+# ===================================================================
+
+class Investment(models.Model):
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    startup = models.ForeignKey(
+        Startup,
+        on_delete=models.CASCADE,
+        related_name="investments"
+    )
+
+    investor = models.ForeignKey(
+        Investor,
+        on_delete=models.CASCADE,
+        related_name="investments"
+    )
+
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"{self.investor.company_name} → {self.startup.startup_name} (${self.amount})"
+
+
+# ===================================================================
+# VI. STARTUP Growth
+# ===================================================================
+
+class StartupGrowth(models.Model):
+    startup = models.ForeignKey(
+        'Startup', 
+        on_delete=models.CASCADE,
+        related_name="growth_metrics"
+    )
+    # Аль сарын өгөгдөл болох
+    label = models.CharField(max_length=20) # Жишээ нь: "1-р сар", "Feb"
+    # График дээрх өндөр (0-100 хувиар)
+    percentage = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="График дээр харуулах өсөлтийн хувь"
+    )
+    # Хэзээ бүртгэгдсэн
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Хамгийн сүүлийн 6 сарын өгөгдлийг дарааллаар нь авахын тулд
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.startup.startup_name} - {self.label}: {self.percentage}%"
+
+
+# ===================================================================
+# VII. WISHLIST (ХАДГАЛСАН ТӨСЛҮҮД)
+# ===================================================================
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="wishlist_items",
+        verbose_name="Хэрэглэгч"
+    )
+    startup = models.ForeignKey(
+        Startup,
+        on_delete=models.CASCADE,
+        related_name="saved_by_users",
+        verbose_name="Стартап"
+    )
+    
+    # Хэзээ хадгалсан хугацаа
+    added_at = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name="Хадгалсан огноо"
+    )
+
+    class Meta:
+        # Нэг хэрэглэгч нэг төслийг олон дахин хадгалах боломжгүй болгох
+        unique_together = ('user', 'startup')
+        verbose_name = "Хадгалсан төсөл"
+        verbose_name_plural = "Хадгалсан төслүүд"
+        ordering = ['-added_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.startup.startup_name} ({self.added_at.strftime('%Y-%m-%d')})"
+    
+# ===================================================================
+# VIII. PLATFORM / ABOUT INFO
+# ===================================================================
+
+class PlatformStats(models.Model):
+    label = models.CharField(max_length=100)
+    value = models.IntegerField()
+    icon = models.CharField(max_length=50, help_text="lucide icon name")
+
+    def __str__(self):
+        return f"{self.label}: {self.value}"
+
+
+class PlatformInfo(models.Model):
+    title = models.CharField(max_length=255, verbose_name="Гарчиг")
+    subtitle = models.TextField(verbose_name="Дэд тайлбар")
+
+    mission = models.TextField(verbose_name="Зорилго")
+    vision = models.TextField(verbose_name="Алсын хараа")
+
+    def __str__(self):
+        return self.title
+
+
+class Core(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+
+    items = models.JSONField(default=list)   
+    images = models.JSONField(default=list)  
+
+    def __str__(self):
+        return self.title

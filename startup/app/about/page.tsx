@@ -19,6 +19,25 @@ export default function AboutPage() {
     { label: "Арга хэмжээ", value: 32, icon: <BookOpen size={22} /> },
   ];
 
+  const coreSection = {
+    title: "Бид юунд итгэдэг вэ?",
+    description:
+      "Технологи бол асуудлыг шийдэх хамгийн хүчтэй зэвсэг. Бидний зорилго бол энэхүү зэвсгийг бүтээж буй залууст санхүүгийн болон стратегийн дэмжлэг үзүүлэх явдал юм.",
+    items: [
+      { title: "Ил тод байдал", icon: "ShieldCheck" },
+      { title: "Хурдтай өсөлт", icon: "ShieldCheck" },
+      { title: "Харилцан итгэлцэл", icon: "ShieldCheck" },
+    ],
+    images: [
+      "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=400&q=80",
+    ],
+  };
+
+  const iconMap = {
+    ShieldCheck,
+  };
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -85,6 +104,7 @@ export default function AboutPage() {
       {/* 3. CORE VALUES */}
       <section className="max-w-5xl mx-auto px-6 py-32">
         <div className="grid md:grid-cols-2 gap-20">
+          {/* LEFT SIDE */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -92,49 +112,45 @@ export default function AboutPage() {
             className="space-y-8"
           >
             <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-              Бид юунд итгэдэг вэ?
+              {coreSection.title}
             </h2>
+
             <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed">
-              Технологи бол асуудлыг шийдэх хамгийн хүчтэй зэвсэг. Бидний
-              зорилго бол энэхүү зэвсгийг бүтээж буй залууст санхүүгийн болон
-              стратегийн дэмжлэг үзүүлэх явдал юм.
+              {coreSection.description}
             </p>
+
             <ul className="space-y-4 font-bold text-sm">
-              <li className="flex items-center gap-3">
-                <ShieldCheck size={18} className="text-emerald-500" /> Ил тод
-                байдал
-              </li>
-              <li className="flex items-center gap-3">
-                <ShieldCheck size={18} className="text-emerald-500" /> Хурдтай
-                өсөлт
-              </li>
-              <li className="flex items-center gap-3">
-                <ShieldCheck size={18} className="text-emerald-500" /> Харилцан
-                итгэлцэл
-              </li>
+              {coreSection.items.map((item) => (
+                <li key={item.title} className="flex items-center gap-3">
+                  <ShieldCheck size={18} className="text-emerald-500" />
+                  {item.title}
+                </li>
+              ))}
             </ul>
           </motion.div>
 
+          {/* RIGHT SIDE */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             className="grid grid-cols-2 gap-4"
           >
-            <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl h-64 overflow-hidden shadow-2xl">
-              <img
-                src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=400&q=80"
-                className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
-                alt="team"
-              />
-            </div>
-            <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl h-64 mt-8 overflow-hidden shadow-2xl">
-              <img
-                src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=400&q=80"
-                className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
-                alt="meeting"
-              />
-            </div>
+            {coreSection.images.map((img, idx) => (
+              <div
+                key={img}
+                className={`
+            bg-slate-100 dark:bg-slate-800 rounded-2xl h-64 overflow-hidden shadow-2xl
+            ${idx === 1 ? "mt-8" : ""}
+          `}
+              >
+                <img
+                  src={img}
+                  className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                  alt="core visual"
+                />
+              </div>
+            ))}
           </motion.div>
         </div>
       </section>

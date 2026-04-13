@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import SaveButton from "@/component/SaveButton";
+import { image } from "framer-motion/client";
 
 const startups = [
   {
@@ -30,7 +31,8 @@ const startups = [
       { name: "Сараа", role: "CTO", img: "https://i.pravatar.cc/150?u=saraa" },
     ],
     pitchDeck: "PitchDeck.pdf",
-    video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    image:
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
     description:
       "UrgaaTech нь жижиг дунд бизнес эрхлэгчдийн санхүүгийн удирдлагыг хөнгөвчлөх зорилготой. Бид хиймэл оюун ухаанд суурилсан тайлан шинжилгээний системийг санал болгож байна.",
   },
@@ -81,9 +83,12 @@ export default function StartupDetailPage() {
           </Link>
           <div className="flex items-center gap-4">
             <SaveButton startupId={startup.id} />
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95">
+            <Link
+              href={`/invest/${startup.id}/checkout`}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 block text-center"
+            >
               Хөрөнгө оруулах
-            </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -123,7 +128,7 @@ export default function StartupDetailPage() {
         {/* LEFT: Content */}
         <div className="lg:col-span-8 space-y-16">
           {/* Video with Premium Frame */}
-          {startup.video && (
+          {startup.image && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -131,10 +136,10 @@ export default function StartupDetailPage() {
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-[2.5rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
               <div className="relative aspect-video rounded-[2rem] overflow-hidden bg-black border border-white/10 shadow-2xl">
-                <iframe
-                  src={startup.video}
-                  className="w-full h-full"
-                  allowFullScreen
+                <img
+                  src={startup.image}
+                  alt={startup.name}
+                  className="w-full h-full object-cover"
                 />
               </div>
             </motion.div>
@@ -208,12 +213,15 @@ export default function StartupDetailPage() {
                     Цугларсан
                   </span>
                 </div>
-                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full p-1">
+                <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-1">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${percent}%` }}
-                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)]"
-                  />
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full relative shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                  >
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[shimmer_2s_linear_infinite]" />
+                  </motion.div>
                 </div>
               </div>
 

@@ -25,6 +25,17 @@ const HomePage = () => {
     }
   }, [darkMode]);
 
+  // 🔐 PROTECTED ROUTE FUNCTION
+  const handleProtectedRoute = (path) => {
+    const token = localStorage.getItem("token"); // auth token
+
+    if (!token) {
+      router.push("/login"); // login хийгээгүй
+    } else {
+      router.push(path); // login хийсэн
+    }
+  };
+
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -64,7 +75,7 @@ const HomePage = () => {
 
             {/* 2. Хөрөнгө оруулах товч */}
             <button
-              onClick={() => router.push("/invest")}
+              onClick={() => router.push("/hh")}
               className="w-full sm:w-auto bg-white dark:bg-transparent text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 px-8 py-4 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-900 transition shadow-sm"
             >
               Хөрөнгө оруулах
@@ -139,7 +150,7 @@ const HomePage = () => {
                 title: "Хөрөнгө оруулалт",
                 desc: "Шилдэг төслүүдийг нэг дороос харж, эрсдэл багатайгаар хөрөнгө оруулах боломж.",
                 icon: <Target className="w-7 h-7" />,
-                href: "/project"
+                href: "/project",
               },
               {
                 title: "Менторшип",
@@ -152,7 +163,6 @@ const HomePage = () => {
                 icon: <BarChart3 className="w-7 h-7" />,
               },
             ].map((feature, i) => (
-              
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 30 }}

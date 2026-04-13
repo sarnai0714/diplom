@@ -94,14 +94,14 @@ export default function Header() {
                     className="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Profile
+                    Миний мэдээлэл
                   </Link>
                   <Link
-                    href="/profile"
+                    href="/whishlist"
                     className="block px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Favourite
+                    Хадгалсан төсөл
                   </Link>
 
                   <button

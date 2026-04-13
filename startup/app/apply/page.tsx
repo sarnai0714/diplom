@@ -151,14 +151,14 @@ const BasicInfo = ({ data, onChange, onNext, onBack }) => (
   >
     <div className="space-y-6">
       <Input
-        label="Стартапын нэр"
+        label="Төслийн нэр"
         name="startupName"
         placeholder="Жишээ: Meta"
         value={data.startupName}
         onChange={onChange}
       />
       <Input
-        label="Салбар"
+        label="Үйл ажиллагааны чиглэл"
         name="industry"
         placeholder="Жишээ: Fintech, AI"
         value={data.industry}
@@ -202,14 +202,15 @@ const Pitch = ({ data, onChange, onNext, onBack }) => (
   >
     <div className="space-y-6">
       <Input
-        label="Pitch Deck Link"
+        label="Төслийн танилцуулга"
+        type="file"
         name="pitchDeck"
         placeholder="Google Drive эсвэл Docsend link"
         value={data.pitchDeck}
         onChange={onChange}
       />
       <Input
-        label="Demo / Website"
+        label="Вэбсайт / Демо холбоос"
         name="demoLink"
         placeholder="https://..."
         value={data.demoLink}
@@ -228,14 +229,14 @@ const Fundraising = ({ data, onChange, onNext, onBack }) => (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <Input
-          label="Татах дүн"
+          label="Хүсэж буй хөрөнгийн хэмжээ"
           name="fundAmount"
           placeholder="Жишээ: $50,000"
           value={data.fundAmount}
           onChange={onChange}
         />
         <Input
-          label="Эзэмшил (%)"
+          label="Санал болгож буй хувь (%)"
           name="equity"
           placeholder="Оролцох хувь"
           value={data.equity}
@@ -244,7 +245,7 @@ const Fundraising = ({ data, onChange, onNext, onBack }) => (
       </div>
       <div className="space-y-2">
         <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
-          Ашиглах зорилго
+          Хөрөнгийн ашиглах зорилго
         </label>
         <textarea
           name="fundPurpose"
@@ -274,14 +275,14 @@ const Founder = ({ data, onChange, onNext, onBack }) => (
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
-          label="Email хаяг"
+          label="Цахим хаяг"
           name="email"
           placeholder="example@gmail.com"
           value={data.email}
           onChange={onChange}
         />
         <Input
-          label="LinkedIn"
+          label="Холбоос"
           name="linkedin"
           placeholder="linkedin.com/in/..."
           value={data.linkedin}

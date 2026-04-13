@@ -32,9 +32,9 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
-        model = StartupApplication
+        model = Startup
         # Хэрэглэгч бөглөх шаардлагагүй талбаруудыг read_only болгоно
-        read_only_fields = ['user', 'status', 'approved_startup', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'status', 'created_at', 'updated_at']
         fields = '__all__'
 
     def validate_phone_number(self, value):
@@ -43,3 +43,41 @@ class ProjectSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Утасны дугаар зөвхөн тооноос бүрдэх ёстой.")
         return value
     
+class InvestorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Investor
+        fields = '__all__'
+        read_only_fields = ['user', 'created_at']
+
+    def validate_registration_number(self, value):
+        # Шинээр үүсгэж байгаа эсвэл засаж байгаа эсэхийг instance байгаа эсэхээр мэднэ
+        instance_id = self.instance.id if self.instance else None
+        
+        # Өөрийгөө оролцуулахгүйгээр ижил регистр байгаа эсэхийг шалгах
+        exists = Investor.objects.filter(registration_number=value).exclude(id=instance_id).exists()
+        
+        if exists:
+            raise serializers.ValidationError("Энэ регистрийн дугаартай байгууллага аль хэдийн бүртгэгдсэн байна.")
+            
+        return value
+    
+class WishlistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wishlist
+        fields = ['id', 'startup', 'added_at']
+        read_only_fields = ['added_at']
+
+    def validate(self, data):
+        user = self.context['request'].user
+        startup = data.get('startup')
+
+        if Wishlist.objects.filter(user=user, startup=startup).exists():
+            raise serializers.ValidationError("Та энэ стартапыг аль хэдийн хадгалсан байна.")
+
+        return data
+    
+class StartupGrowthSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StartupGrowth
+        fields = '__all__'
+        read_only_fields = ['created_at']
