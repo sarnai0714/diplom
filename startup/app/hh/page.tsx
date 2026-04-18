@@ -9,11 +9,13 @@ import {
   Globe,
   Mail,
   ChevronRight,
+  ChevronLeft,
   ArrowLeft,
   UploadCloud,
   Briefcase,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // Next.js ашиглаж байгаа гэж үзэв
 
 export default function OrgRegistrationPage() {
   const [step, setStep] = useState(1);
@@ -71,6 +73,14 @@ export default function OrgRegistrationPage() {
 
         {/* Form Container */}
         <div className="bg-white dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
+          <div className="absolute top-6 left-8 z-10">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm font-medium group"
+            >
+              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
           <AnimatePresence mode="wait">
             {/* STEP 1: Basic Info */}
             {step === 1 && (

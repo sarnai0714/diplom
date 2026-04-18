@@ -11,7 +11,6 @@ import {
   Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Link from "lucide-react";
 
 const HomePage = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -66,6 +65,7 @@ const HomePage = () => {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {/* 1. Төсөл бүртгүүлэх товч */}
+
             <button
               onClick={() => router.push("/apply")}
               className="w-full sm:w-auto bg-slate-900 dark:bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg"

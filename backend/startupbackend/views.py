@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .serializers import CustomUserCreateSerializer,ProjectSerializer,InvestorSerializer,WishlistSerializer,StartupGrowthSerializer
 from django.contrib.auth import get_user_model
-
+from .permissions import IsStartup
 User = get_user_model()
 
 class RegisterView(generics.CreateAPIView):
@@ -16,23 +16,35 @@ class RegisterView(generics.CreateAPIView):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Startup.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.AllowAny]
+        elif self.action == 'create':
+            permission_classes = [IsStartup]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        
+        return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
-        # Хүсэлт илгээж буй хэрэглэгчийг 'user' талбарт автоматаар хадгална
         serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
         return Response({
             "message": "Таны стартап бүртгүүлэх хүсэлт амжилттай илгээгдлээ.",
-            "data": response.data
+            "data": serializer.data
         }, status=status.HTTP_201_CREATED)
     
 class InvestorViewSet(viewsets.ModelViewSet):
     queryset = Investor.objects.all()
     serializer_class = InvestorSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def create(self, request, *args, **kwargs):

@@ -62,8 +62,7 @@ export default function InvestorsSection() {
             >
               <TrendingUp size={14} /> Хөрөнгө оруулагч
             </motion.div>
-            
-            
+
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">
               Итгэмжлэгдсэн{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">

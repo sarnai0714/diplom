@@ -92,7 +92,9 @@ class Startup(models.Model):
         verbose_name="Ашиглах зорилго"
     )
 
-    description = models.TextField()
+    description = models.TextField(
+        verbose_name="Дэлгэрэнгүй тайлбар"
+    )
 
     image_url = models.FileField(
         upload_to='images/',
@@ -185,7 +187,7 @@ class TeamMember(models.Model):
 # ===================================================================
 
 class Investor(models.Model):
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
         related_name="investor_profile"
