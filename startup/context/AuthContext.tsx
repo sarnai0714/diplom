@@ -15,7 +15,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  
+
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) setUser(JSON.parse(savedUser));
@@ -31,18 +31,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (res.ok) {
       const data = await res.json();
+
       localStorage.setItem("access", data.access);
       localStorage.setItem("refresh", data.refresh);
 
-      // Хэрэглэгчийн мэдээллийг Djoser-оос авах
       const userRes = await fetch("http://127.0.0.1:8000/auth/users/me/", {
-        headers: { Authorization: `Bearer ${data.access}` },
-      });
+        headers: {
+          Authorization: `Bearer ${data.access}`,
+        },
+      }); 
 
       if (userRes.ok) {
         const userData = await userRes.json();
+
         setUser(userData);
+
         localStorage.setItem("user", JSON.stringify(userData));
+
+        // ✅ THIS IS THE FIX
+        localStorage.setItem("role", userData.role);
+        return userData;
       }
     } else {
       throw new Error("Хэрэглэгчийн нэр эсвэл нууц үг буруу байна.");

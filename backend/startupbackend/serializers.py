@@ -81,3 +81,8 @@ class StartupGrowthSerializer(serializers.ModelSerializer):
         model = StartupGrowth
         fields = '__all__'
         read_only_fields = ['created_at']
+
+class SiteContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SiteContent
+        fields = ['id', 'page_name', 'content_key', 'text_content', 'updated_at']

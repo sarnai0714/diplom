@@ -53,7 +53,7 @@ export default function ApplyPage() {
 
   const handleSubmit = async () => {
     const token = localStorage.getItem("access");
-
+    console.log("TOKEN1:", token);
     if (!token) {
       alert("Та эхлээд нэвтрэх шаардлагатай!");
       router.push("/login");
@@ -75,7 +75,6 @@ export default function ApplyPage() {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          
         },
         body: formData,
       });

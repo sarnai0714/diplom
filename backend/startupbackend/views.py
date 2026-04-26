@@ -3,7 +3,7 @@ from rest_framework import generics,viewsets,permissions,status,serializers,pars
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from .serializers import CustomUserCreateSerializer,ProjectSerializer,InvestorSerializer,WishlistSerializer,StartupGrowthSerializer
+from .serializers import CustomUserCreateSerializer,ProjectSerializer,InvestorSerializer,WishlistSerializer,StartupGrowthSerializer,SiteContentSerializer
 from django.contrib.auth import get_user_model
 from .permissions import IsStartup
 User = get_user_model()
@@ -91,3 +91,9 @@ class StartupGrowthViewSet(viewsets.ModelViewSet):
         if startup_id:
             return StartupGrowth.objects.filter(startup_id=startup_id).order_by('created_at')[:6]
         return super().get_queryset()
+    
+class SiteContentViewSet(viewsets.ModelViewSet):
+    queryset = SiteContent.objects.all()
+    serializer_class = SiteContentSerializer
+    # id-аар биш slug-аар (content_key) хандах тохиргоо
+    lookup_field = 'content_key'

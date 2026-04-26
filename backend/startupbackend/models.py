@@ -9,6 +9,7 @@ class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ('startup', 'Startup Founder'),
         ('investor', 'Investor'),
+        ('admin','Admin')
     )
 
     role = models.CharField(
@@ -388,3 +389,20 @@ class Core(models.Model):
 
     def __str__(self):
         return self.title
+    
+# ===================================================================
+# IX.  Content
+# ===================================================================
+
+class SiteContent(models.Model):
+    page_name = models.CharField(max_length=100, verbose_name="Хуудасны нэр")
+    content_key = models.SlugField(unique=True, verbose_name="Түлхүүр үг (Slug)")
+    text_content = models.TextField(verbose_name="HTML Агуулга")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.page_name} - {self.content_key}"
+
+    class Meta:
+        verbose_name = "Сайтын контент"
+        verbose_name_plural = "Сайтын контентууд"

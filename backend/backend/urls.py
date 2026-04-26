@@ -20,7 +20,7 @@ from rest_framework import routers
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from startupbackend.views import RegisterView,ProjectViewSet,InvestorViewSet,WishlistViewSet,StartupGrowthViewSet
+from startupbackend.views import RegisterView,ProjectViewSet,InvestorViewSet,WishlistViewSet,StartupGrowthViewSet,SiteContentViewSet
 
 
 router = routers.DefaultRouter()
@@ -28,6 +28,7 @@ router.register(r'projects', ProjectViewSet, basename='projects')
 router.register(r'investors', InvestorViewSet, basename='investors')
 router.register(r'wishlist', WishlistViewSet, basename='wishlist')
 router.register(r'startup-growth', StartupGrowthViewSet)
+router.register(r'contents', SiteContentViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
