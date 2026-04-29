@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import {
   Building2,
   Target,
@@ -8,48 +9,182 @@ import {
   Briefcase,
   ArrowUpRight,
   TrendingUp,
+  X,
+  Send,
+  Calendar,
+  Info,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
-const investors = [
-  {
-    id: 1,
-    name: "Mongolia Ventures",
-    type: "Venture Capital",
-    focus: "Fintech, AI & SaaS",
-    portfolio: "12+",
-    range: "$50k - $500k",
-    initials: "MV",
-    color: "from-blue-500 to-cyan-400",
-  },
-  {
-    id: 2,
-    name: "Steppe Angels",
-    type: "Angel Group",
-    focus: "Early-stage & EduTech",
-    portfolio: "25+",
-    range: "$10k - $100k",
-    initials: "SA",
-    color: "from-purple-500 to-pink-500",
-  },
-  {
-    id: 3,
-    name: "Altai Capital",
-    type: "Private Equity",
-    focus: "Growth & Infra",
-    portfolio: "8",
-    range: "$1M+",
-    initials: "AC",
-    color: "from-emerald-500 to-teal-400",
-  },
-];
+// --- Өгөгдөл ---
+interface Investor {
+  id: number;
+  company_name: string;
+  registration_number: string;
+  website: string;
+  representative_name: string;
+  contact_email: string;
+}
 
-export default function InvestorsSection() {
+// --- Холбоо барих Модал Компонент ---
+const ContactModal = ({ isOpen, onClose, investor }) => {
+  if (!isOpen) return null;
+
   return (
-    <section className="relative bg-slate-50 dark:bg-[#020617] py-24 px-6 overflow-hidden">
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {/* Backdrop - Ар талын бүдгэрүүлэгч */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+        />
+
+        {/* Modal Content */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800"
+        >
+          {/* Header */}
+          <div className="relative p-8 pb-0">
+            <button
+              onClick={onClose}
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X size={20} className="text-slate-500" />
+            </button>
+            <div className="flex items-center gap-4 mb-6">
+              <div
+                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${investor.color} flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/10`}
+              >
+                {investor.initials}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  {investor.name}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Хөрөнгө оруулалтын хүсэлт
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="p-8 space-y-5">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
+                Таны стартап нэр
+              </label>
+              <input
+                type="text"
+                placeholder="Жишээ: Tech-Ulaanbaatar"
+                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all dark:text-white"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
+                Танилцуулга зурвас
+              </label>
+              <textarea
+                rows={4}
+                placeholder="Төслийнхөө товч утга, зорилгыг энд бичнэ үү..."
+                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all dark:text-white resize-none"
+              />
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl flex gap-3">
+              <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed font-medium">
+                Таны хүсэлтийг хүлээн авсны дараа {investor.name} багийн зүгээс
+                таны бүртгэлтэй имэйл хаягаар хариу өгөх болно.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => {
+                  alert("Амжилттай илгээгдлээ!");
+                  onClose();
+                }}
+                className="flex-[4] py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 shadow-xl shadow-slate-200 dark:shadow-none"
+              >
+                <Send size={18} /> Хүсэлт илгээх
+              </button>
+              <button className="flex-1 flex items-center justify-center w-14 h-14 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-90">
+                <Calendar
+                  size={20}
+                  className="text-slate-600 dark:text-slate-400"
+                />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+};
+
+// --- Үндсэн Хэсэг ---
+export default function InvestorsSection() {
+  const [investors, setInvestors] = useState<Investor[]>([]);
+  const [selectedInvestor, setSelectedInvestor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  // --- API-аас дата татах хэсэг ---
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // localStorage-оос токеноо авах (Жишээ нь 'access_token' нэрээр хадгалсан бол)
+        const token = localStorage.getItem("access");
+
+        const response = await fetch("http://127.0.0.1:8000/api/investors/", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 401) {
+          console.error("Нэвтрэх эрх хүчингүй байна.");
+          // Энд хэрэглэгчийг Login хуудас руу шилжүүлэх логик нэмж болно
+          return;
+        }
+
+        const data = await response.json();
+
+        if (Array.isArray(data)) {
+          setInvestors(data);
+        } else if (data.results && Array.isArray(data.results)) {
+          setInvestors(data.results);
+        }
+      } catch (error) {
+        console.error("API Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  return (
+    <section className="relative bg-slate-50 dark:bg-[#020617] py-24 px-6 overflow-hidden min-h-screen">
       {/* Background decoration */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full -z-10" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/10 blur-[120px] rounded-full -z-10" />
+
+      {/* uusgalttai ungu */}
+      {/* <div className="absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-blue-500/20 blur-[140px]" />
+      <div className="absolute right-0 bottom-0 h-[500px] w-[500px] rounded-full bg-fuchsia-500/20 blur-[140px]" /> */}
 
       <div className="max-w-6xl mx-auto">
         {/* Header */}
@@ -143,7 +278,10 @@ export default function InvestorsSection() {
 
               {/* Actions */}
               <div className="flex gap-3">
-                <button className="flex-[3] py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setSelectedInvestor(investor)}
+                  className="flex-[3] py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
                   <Mail size={18} /> Холбоо барих
                 </button>
                 <button className="flex-1 h-14 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hover:scale-[1.02]">
@@ -184,6 +322,13 @@ export default function InvestorsSection() {
           </button>
         </motion.div>
       </div>
+
+      {/* Modal - Сонгогдсон хөрөнгө оруулагч байвал харуулна */}
+      <ContactModal
+        isOpen={!!selectedInvestor}
+        onClose={() => setSelectedInvestor(null)}
+        investor={selectedInvestor || {}}
+      />
     </section>
   );
 }

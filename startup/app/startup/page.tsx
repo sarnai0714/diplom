@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,11 +27,14 @@ interface Startup {
   image_url: string;
 }
 
+
+
 export default function InvestPage() {
   const [startups, setStartups] = useState<Startup[]>([]);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedIndustry, setSelectedIndustry] = useState("");
 
   // --- API-аас дата татах хэсэг ---
   useEffect(() => {
@@ -57,18 +60,50 @@ export default function InvestPage() {
     fetchData();
   }, []);
 
-  const toggleWishlist = (id: number) => {
-    setWishlist((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
+  const industries = useMemo(() => {
+    return Array.from(new Set(startups.map((s) => s.industry)));
+  }, [startups]);
+  //-------------------------------
+  // WISHLIST POST
+  // -------------------------------
+  const toggleWishlist = async (startupId: number) => {
+    try {
+      const token = localStorage.getItem("access");
+      const response = await fetch("http://127.0.0.1:8000/api/wishlist/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          startup: startupId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setWishlist((prev) => [...prev, startupId]);
+      } else {
+        console.log(data);
+        alert(data.non_field_errors?.[0] || "Алдаа гарлаа");
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   // Хайлт хийх логик (Client-side filtering)
-  const filteredStartups = startups.filter(
-    (s) =>
+  const filteredStartups = startups.filter((s) => {
+    const matchesSearch =
       s.startup_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.industry.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+      s.industry.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesIndustry =
+      selectedIndustry === "" || s.industry === selectedIndustry;
+
+    return matchesSearch && matchesIndustry;
+  });
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#020617] transition-colors duration-500 font-sans selection:bg-blue-500/30">
@@ -97,64 +132,34 @@ export default function InvestPage() {
             </h1>
           </motion.div>
 
+          {/* --- 2. Filters & Search --- */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-5 bg-slate-50 dark:bg-slate-900/50 backdrop-blur-xl p-5 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl shadow-blue-500/5"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col lg:flex-row gap-4 mb-16 p-2 bg-slate-100/50 dark:bg-slate-900/30 rounded-[2.5rem] backdrop-blur-md"
           >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white shadow-xl shadow-blue-500/40">
-              <Wallet size={26} />
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">
-                Balance
-              </p>
-              <p className="text-2xl font-black dark:text-white">$12,450.00</p>
+            <div className="flex gap-2">
+              <select
+                value={selectedIndustry}
+                onChange={(e) => setSelectedIndustry(e.target.value)}
+                className="px-8 py-5 rounded-[2rem] bg-white dark:bg-slate-900 ..."
+              >
+                <option value="">Бүх салбар</option>
+
+                {industries.map((industry) => (
+                  <option key={industry} value={industry}>
+                    {industry}
+                  </option>
+                ))}
+              </select>
+              {/* <button className="px-8 py-5 rounded-[2rem] bg-slate-900 dark:bg-blue-600 text-white flex items-center gap-3 hover:shadow-xl hover:shadow-blue-500/20 transition-all active:scale-95">
+                <Filter size={18} />
+                <span className="font-bold">Шүүлтүүр</span>
+              </button> */}
             </div>
           </motion.div>
         </div>
-
-        {/* --- 2. Filters & Search --- */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-col lg:flex-row gap-4 mb-16 p-2 bg-slate-100/50 dark:bg-slate-900/30 rounded-[2.5rem] backdrop-blur-md"
-        >
-          <div className="relative flex-grow">
-            <Search
-              className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"
-              size={20}
-            />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Төслийн нэр, салбараар хайх..."
-              className="w-full pl-16 pr-6 py-5 rounded-[2rem] bg-white dark:bg-slate-900 border-none focus:ring-2 ring-blue-500/20 outline-none transition-all dark:text-white font-medium"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <select className="px-8 py-5 rounded-[2rem] bg-white dark:bg-slate-900 border-none font-bold text-sm outline-none cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-              <option>Салбар</option>
-              <option>Fintech</option>
-              <option>Edtech</option>
-              <option>Energy</option>
-            </select>
-            <select className="px-8 py-5 rounded-[2rem] bg-white dark:bg-slate-900 border-none font-bold text-sm outline-none cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-              <option>Үе шат</option>
-              <option>Idea</option>
-              <option>MVP</option>
-              <option>Growth</option>
-            </select>
-
-            <button className="px-8 py-5 rounded-[2rem] bg-slate-900 dark:bg-blue-600 text-white flex items-center gap-3 hover:shadow-xl hover:shadow-blue-500/20 transition-all active:scale-95">
-              <Filter size={18} />
-              <span className="font-bold">Шүүлтүүр</span>
-            </button>
-          </div>
-        </motion.div>
 
         {/* --- 3. Startup Cards Grid (Data Rendering) --- */}
         {loading ? (
@@ -244,7 +249,7 @@ export default function InvestPage() {
                             Цугларсан
                           </p>
                           <p className="text-xl font-black text-slate-900 dark:text-white">
-                            ${s.raised_amount.toLocaleString()}
+                            {s.raised_amount.toLocaleString()}
                           </p>
                         </div>
                         <div className="text-right space-y-1">
@@ -252,7 +257,7 @@ export default function InvestPage() {
                             Зорилт
                           </p>
                           <p className="text-sm font-bold text-blue-600">
-                            ${s.fund_amount.toLocaleString()}
+                            {s.fund_amount.toLocaleString()}
                           </p>
                         </div>
                       </div>

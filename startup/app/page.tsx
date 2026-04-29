@@ -2,22 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Sun,
-  Moon,
-  Rocket,
-  Target,
-  BarChart3,
-  ChevronRight,
-  Zap,
-} from "lucide-react";
+import { Rocket, Target, BarChart3, ChevronRight, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
+
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 const HomePage = () => {
   const [darkMode, setDarkMode] = useState(false);
   const router = useRouter();
 
-  // Dark mode
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -26,11 +25,11 @@ const HomePage = () => {
     }
   }, [darkMode]);
 
-  // ✅ Төсөл бүртгүүлэх route хамгаалалт
+  // Startup route хамгаалалт
   const handleApplyRoute = () => {
     const token = localStorage.getItem("access");
     const role = localStorage.getItem("role");
-    console.log("Role:", role);
+
     if (!token) {
       router.push("/login");
       return;
@@ -44,7 +43,7 @@ const HomePage = () => {
     router.push("/apply");
   };
 
-  // ✅ Хөрөнгө оруулах route хамгаалалт
+  // Investor route хамгаалалт
   const handleInvestorRoute = () => {
     const token = localStorage.getItem("access");
     const role = localStorage.getItem("role");
@@ -61,26 +60,6 @@ const HomePage = () => {
 
     router.push("/hh");
   };
-  // admin route хамгаалалт
-  const handleAdminRoute = () => {
-    const token = localStorage.getItem("access");
-    const role = localStorage.getItem("role");
-
-    // 1. Нэвтрээгүй бол login руу явуулна
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    // 2. Роль нь админ биш бол анхааруулна
-    if (role !== "admin") {
-      alert("Энэ хэсэг зөвхөн Админ хэрэглэгчдэд зориулагдсан.");
-      return;
-    }
-
-    // 3. Бүх зүйл OK бол /admin руу
-    router.push("/admin");
-  };
 
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -88,20 +67,33 @@ const HomePage = () => {
     transition: { duration: 0.6 },
   };
 
+  // Chart Data
+  const chartData = [
+    { month: "1 сар", growth: 40 },
+    { month: "2 сар", growth: 70 },
+    { month: "3 сар", growth: 45 },
+    { month: "4 сар", growth: 90 },
+    { month: "5 сар", growth: 65 },
+    { month: "6 сар", growth: 80 },
+  ];
+
+  const chartConfig = {
+    growth: {
+      label: "Өсөлт",
+      color: "blue",
+    },
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
+      <div className="absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-blue-500/20 blur-[140px]" />
+      <div className="absolute right-0 bottom-0 h-[500px] w-[500px] rounded-full bg-fuchsia-500/20 blur-[140px]" />
       {/* HERO */}
       <section className="max-w-7xl mx-auto px-8 py-24 flex flex-col items-center text-center">
         <motion.div {...fadeIn}>
-          <div className="max-w-7xl mx-auto px-8 flex flex-col items-center text-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold mb-8 uppercase tracking-widest"
-            >
-              <Zap size={14} className="fill-current" />
-              <span>V1.0 Шинээр гарлаа</span>
-            </motion.div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold mb-8 uppercase tracking-widest">
+            <Zap size={14} className="fill-current" />
+            <span>V1.0 Шинээр гарлаа</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 leading-[1.1]">
@@ -114,7 +106,6 @@ const HomePage = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            {/* Startup */}
             <button
               onClick={handleApplyRoute}
               className="w-full sm:w-auto bg-slate-900 dark:bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg"
@@ -122,7 +113,6 @@ const HomePage = () => {
               Төсөл бүртгүүлэх <ChevronRight size={18} />
             </button>
 
-            {/* Investor */}
             <button
               onClick={handleInvestorRoute}
               className="w-full sm:w-auto bg-white dark:bg-transparent text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 px-8 py-4 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-900 transition shadow-sm"
@@ -145,23 +135,32 @@ const HomePage = () => {
               <h3 className="text-xl font-bold mb-1">Төслийн өсөлт</h3>
               <p className="text-sm text-slate-500">Сүүлийн 6 сарын байдлаар</p>
             </div>
+
             <BarChart3 className="text-blue-600" />
           </div>
 
-          <div className="flex items-end justify-between h-48 gap-2">
-            {[40, 70, 45, 90, 65, 80].map((height, i) => (
-              <motion.div
-                key={i}
-                initial={{ height: 0 }}
-                whileInView={{ height: `${height}%` }}
-                transition={{ delay: i * 0.1, duration: 1 }}
-                className="w-full bg-gradient-to-t from-blue-600 to-indigo-400 rounded-t-lg relative group"
-              >
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
-                  {height}%
-                </div>
-              </motion.div>
-            ))}
+          {/* SHADCN CHART */}
+          <div className="h-[320px]">
+            <ChartContainer config={chartConfig} className="h-full w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} />
+
+                  <YAxis tickLine={false} axisLine={false} />
+
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent />}
+                  />
+
+                  <Bar
+                    dataKey="growth"
+                    radius={[12, 12, 0, 0]}
+                    fill="var(--color-growth)"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
           </div>
         </motion.div>
       </section>

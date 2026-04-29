@@ -53,6 +53,8 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#020617] text-slate-900 dark:text-slate-100">
+      <div className="absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-blue-500/20 blur-[140px]" />
+      <div className="absolute right-0 bottom-0 h-[500px] w-[500px] rounded-full bg-fuchsia-500/20 blur-[140px]" />
       {/* 1. HERO */}
       <section className="relative pt-32 pb-20 px-6">
         <div className="max-w-5xl mx-auto">

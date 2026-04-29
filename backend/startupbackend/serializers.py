@@ -46,20 +46,39 @@ class ProjectSerializer(serializers.ModelSerializer):
 class InvestorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Investor
+        # Бүх талбарыг авахын оронд талбаруудыг нэрлэж өгөх нь аюулгүй байдалд тустай
         fields = '__all__'
         read_only_fields = ['user', 'created_at']
 
     def validate_registration_number(self, value):
-        # Шинээр үүсгэж байгаа эсвэл засаж байгаа эсэхийг instance байгаа эсэхээр мэднэ
-        instance_id = self.instance.id if self.instance else None
+        """
+        Регистрийн дугаарын давхцлыг шалгах логик
+        """
+        # 1. Хоосон утга эсвэл формат шалгах (нэмэлтээр)
+        if not value:
+            raise serializers.ValidationError("Регистрийн дугаар заавал байх ёстой.")
+
+        # 2. Өөрийгөө оролцуулахгүйгээр (Update үед) давхцлыг шалгах
+        # self.instance байгаа эсэхийг шалгаад, байвал түүний ID-г хасна
+        queryset = Investor.objects.filter(registration_number=value)
         
-        # Өөрийгөө оролцуулахгүйгээр ижил регистр байгаа эсэхийг шалгах
-        exists = Investor.objects.filter(registration_number=value).exclude(id=instance_id).exists()
-        
-        if exists:
-            raise serializers.ValidationError("Энэ регистрийн дугаартай байгууллага аль хэдийн бүртгэгдсэн байна.")
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError(
+                "Энэ регистрийн дугаартай байгууллага аль хэдийн бүртгэгдсэн байна."
+            )
             
         return value
+
+    def create(self, validated_data):
+        """
+        Шинээр үүсгэх үед context-оос хэрэглэгчийг авах боломжтой
+        """
+        # Жишээ: Хэрэв request.user-ийг investor-той холбох бол
+        # validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
     
 class WishlistSerializer(serializers.ModelSerializer):
     class Meta:

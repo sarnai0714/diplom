@@ -65,7 +65,6 @@ export default function RegisterPage() {
           >
             <option value="investor">Хөрөнгө оруулагч</option>
             <option value="startup">Стартап</option>
-            <option value="admin">Админ</option>
           </select>
           <input
             type="password"
