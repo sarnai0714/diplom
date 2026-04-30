@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Building2,
-  Target,
-  ExternalLink,
   Mail,
   Briefcase,
   ArrowUpRight,
@@ -13,6 +10,7 @@ import {
   Send,
   Calendar,
   Info,
+  Link,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -22,9 +20,32 @@ interface Investor {
   company_name: string;
   registration_number: string;
   website: string;
+  focus_industry: string;
   representative_name: string;
   contact_email: string;
+  investment_range: string;
 }
+const gradients = [
+  // 🔵 Хөх (Blue)
+  "from-blue-500 to-indigo-600",
+  "from-sky-400 to-blue-600",
+
+  // 🟣 Ягаан (Purple / Pink)
+  "from-purple-500 to-pink-500",
+  "from-fuchsia-500 to-rose-500",
+
+  // 🟢 Ногоон (Green)
+  "from-emerald-400 to-green-600",
+  "from-lime-400 to-emerald-600",
+];
+
+const getColor = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return gradients[Math.abs(hash) % gradients.length];
+};
 
 // --- Холбоо барих Модал Компонент ---
 const ContactModal = ({ isOpen, onClose, investor }) => {
@@ -59,13 +80,15 @@ const ContactModal = ({ isOpen, onClose, investor }) => {
             </button>
             <div className="flex items-center gap-4 mb-6">
               <div
-                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${investor.color} flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/10`}
+                className={`w-16 h-16 bg-gradient-to-br ${getColor(
+                  investor.company_name,
+                )} rounded-2xl flex items-center justify-center text-white font-black text-2xl`}
               >
-                {investor.initials}
+                {investor.company_name?.slice(0, 2).toUpperCase()}
               </div>
               <div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {investor.name}
+                  {investor.company_name}
                 </h3>
                 <p className="text-sm text-slate-500">
                   Хөрөнгө оруулалтын хүсэлт
@@ -101,8 +124,8 @@ const ContactModal = ({ isOpen, onClose, investor }) => {
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl flex gap-3">
               <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
               <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed font-medium">
-                Таны хүсэлтийг хүлээн авсны дараа {investor.name} багийн зүгээс
-                таны бүртгэлтэй имэйл хаягаар хариу өгөх болно.
+                Таны хүсэлтийг хүлээн авсны дараа {investor.company_name} багийн
+                зүгээс таны бүртгэлтэй имэйл хаягаар хариу өгөх болно.
               </p>
             </div>
 
@@ -209,12 +232,6 @@ export default function InvestorsSection() {
               анжел хөрөнгө оруулагчидтай шууд холбогд.
             </p>
           </div>
-          <button className="group flex items-center gap-2 text-slate-900 dark:text-white font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-all">
-            Бүх хөрөнгө оруулагчид
-            <div className="p-2 rounded-full bg-white dark:bg-slate-800 shadow-sm group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">
-              <ArrowUpRight size={18} />
-            </div>
-          </button>
         </div>
 
         {/* Grid */}
@@ -231,16 +248,18 @@ export default function InvestorsSection() {
               {/* Profile Header */}
               <div className="flex items-center justify-between mb-8">
                 <div
-                  className={`w-16 h-16 bg-gradient-to-br ${investor.color} rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-500/20`}
+                  className={`w-16 h-16 bg-gradient-to-br ${getColor(
+                    investor.company_name,
+                  )} rounded-2xl flex items-center justify-center text-white font-black text-2xl`}
                 >
-                  {investor.initials}
+                  {investor.company_name?.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                    Төрөл
+                    Үйл ажиллагааны чиглэл
                   </span>
                   <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold">
-                    {investor.type}
+                    {investor.focus_industry}
                   </span>
                 </div>
               </div>
@@ -248,29 +267,37 @@ export default function InvestorsSection() {
               {/* Info */}
               <div className="mb-8">
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
-                  {investor.name}
+                  {investor.company_name}
                 </h3>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-semibold">
-                  <Target size={14} className="text-blue-500" />
-                  {investor.focus}
+                <div className="inline-flex items-center mb-3 gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-semibold">
+                  <Mail size={14} className="text-blue-500" />
+                  {investor.contact_email}
                 </div>
+                <a
+                  href={
+                    investor.website.startsWith("http")
+                      ? investor.website
+                      : `https://${investor.website}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer"
+                >
+                  <Link size={14} className="text-blue-500" />
+                  {investor.website}
+                </a>
 
                 {/* Micro-stats */}
-                <div className="grid grid-cols-2 gap-6 mt-8 p-5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase font-black mb-1 tracking-tighter">
-                      Багц
-                    </p>
-                    <p className="text-base font-bold text-slate-900 dark:text-white italic">
-                      {investor.portfolio}
-                    </p>
+                <div className="mb-8 mt-8 p-5 bg-slate-50/50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 flex justify-between items-center group/stats">
+                  <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm">
+                    <TrendingUp size={18} className="text-emerald-500" />
                   </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase font-black mb-1 tracking-tighter">
-                      Хэмжээ
+                  <div className="text-right">
+                    <p className="text-[10px] text-slate-400 uppercase font-black mb-1 tracking-widest">
+                      Хөрөнгө оруулалт
                     </p>
-                    <p className="text-base font-bold text-slate-900 dark:text-white">
-                      {investor.range}
+                    <p className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
+                      {investor.investment_range}
                     </p>
                   </div>
                 </div>
@@ -292,9 +319,11 @@ export default function InvestorsSection() {
                 </button>
               </div>
 
-              {/* Top accent line */}
+              {/* Accent */}
               <div
-                className={`absolute top-0 left-12 right-12 h-1 bg-gradient-to-r ${investor.color} rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                className={`absolute top-0 left-12 right-12 h-1 bg-gradient-to-r ${getColor(
+                  investor.company_name,
+                )} opacity-0 group-hover:opacity-100`}
               />
             </motion.div>
           ))}

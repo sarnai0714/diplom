@@ -1,91 +1,141 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   FileText,
-  Users,
-  PieChart,
   Download,
   Mail,
-  ExternalLink,
   ShieldCheck,
   TrendingUp,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import SaveButton from "@/component/SaveButton";
-import { image } from "framer-motion/client";
 
-const startups = [
-  {
-    id: "1",
-    name: "UrgaaTech",
-    industry: "Fintech",
-    stage: "MVP",
-    pitch: "ЖДБ-д зориулсан ухаалаг санхүүгийн платформ болон автоматжуулалт.",
-    fundGoal: 500000,
-    raised: 300000,
-    team: [
-      { name: "Бат", role: "CEO", img: "https://i.pravatar.cc/150?u=bat" },
-      { name: "Сараа", role: "CTO", img: "https://i.pravatar.cc/150?u=saraa" },
-    ],
-    pitchDeck: "PitchDeck.pdf",
-    image:
-      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
-    description:
-      "UrgaaTech нь жижиг дунд бизнес эрхлэгчдийн санхүүгийн удирдлагыг хөнгөвчлөх зорилготой. Бид хиймэл оюун ухаанд суурилсан тайлан шинжилгээний системийг санал болгож байна.",
-  },
-  // ... бусад дата
-];
+interface TeamMember {
+  id: number;
+  name: string;
+  role: string;
+  role_display: string;
+  image: string;
+  linkedin_url: string;
+}
+
+interface Startup {
+  id: number;
+  startup_name: string;
+  industry: string;
+  stage: string;
+  pitch_deck_link: string;
+  description: string;
+  equity_offered: string;
+  fund_purpose: string;
+  fund_amount: number;
+  raised_amount: number;
+  image_url: string;
+  team_members: TeamMember[];
+}
 
 export default function StartupDetailPage() {
-  const { id } = useParams();
-  const startup = startups.find((s) => s.id === id);
+  const params = useParams();
+  const id = params?.id;
 
-  if (!startup) {
+  const [loading, setLoading] = useState(true);
+  const [startup, setStartup] = useState<Startup | null>(null);
+  const [wishlist, setWishlist] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`http://127.0.0.1:8000/api/projects/${id}/`);
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        setStartup(data);
+      } catch (error) {
+        console.error("API Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  const toggleWishlist = async (startupId: number) => {
+    try {
+      const token = localStorage.getItem("access");
+      const response = await fetch("http://127.0.0.1:8000/api/wishlist/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          startup: startupId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setWishlist((prev) => [...prev, startupId]);
+      } else {
+        console.log(data);
+        alert(data.non_field_errors?.[0] || "Алдаа гарлаа");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#020617]">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
-        >
-          <p className="text-2xl font-bold text-slate-400 mb-6">
-            Стартап олдсонгүй
-          </p>
-          <Link
-            href="/invest"
-            className="px-8 py-3 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition-all"
-          >
-            Жагсаалт руу буцах
-          </Link>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617]">
+        <div className="animate-pulse font-bold text-blue-600">
+          Уншиж байна...
+        </div>
       </div>
     );
   }
 
-  const percent = Math.round((startup.raised / startup.fundGoal) * 100);
+  if (!startup) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#020617]">
+        <p className="text-2xl font-bold text-slate-400 mb-6">
+          Стартап олдсонгүй
+        </p>
+        <Link
+          href="/invest"
+          className="px-8 py-3 bg-blue-600 text-white rounded-full"
+        >
+          Жагсаалт руу буцах
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617] text-slate-900 dark:text-slate-100 selection:bg-blue-500/30">
-      {/* 1. Навигаци - Floating Style */}
-      <nav className="fixed top-25 inset-x-0 z-50 max-w-5xl mx-auto px-4">
-        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 dark:border-slate-800 shadow-2xl shadow-black/5 rounded-3xl px-6 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617] text-slate-900 dark:text-white">
+      {/* NAVIGATION */}
+      <nav className="fixed top-25 inset-x-0 z-50 max-w-6xl mx-auto px-4">
+        <div className="flex justify-between items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-6 py-3 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800">
           <Link
-            href="/invest"
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors group"
+            href="/startup"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
           >
-            <ArrowLeft
-              size={20}
-              className="group-hover:-translate-x-1 transition-transform"
-            />
+            <ArrowLeft size={24} />
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4">
             <SaveButton startupId={startup.id} />
             <Link
               href={`/invest/${startup.id}/checkout`}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 block text-center"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-2xl font-bold transition-all active:scale-95"
             >
               Хөрөнгө оруулах
             </Link>
@@ -93,183 +143,140 @@ export default function StartupDetailPage() {
         </div>
       </nav>
 
-      {/* 2. Hero Section */}
-      <header className="pt-32 pb-16 px-6 relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full -z-10">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full" />
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 blur-[120px] rounded-full" />
+      <header className="pt-32 pb-12 max-w-6xl mx-auto px-6">
+        <div className="flex gap-2 mb-4">
+          <span className="px-3 py-1 bg-blue-500/10 text-blue-600 rounded-full text-xs font-bold border border-blue-500/20">
+            {startup.industry}
+          </span>
+          <span className="px-3 py-1 bg-slate-500/10 text-slate-500 rounded-full text-xs font-bold border border-slate-500/20">
+            {startup.stage} Stage
+          </span>
         </div>
-
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl"
-          >
-            <div className="flex gap-2 mb-6">
-              <span className="px-4 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-black tracking-widest uppercase rounded-full border border-blue-500/20">
-                {startup.industry}
-              </span>
-              <span className="px-4 py-1.5 bg-slate-500/10 text-slate-500 text-[10px] font-black tracking-widest uppercase rounded-full border border-slate-500/20">
-                {startup.stage} Stage
-              </span>
-            </div>
-            <h1 className="text-6xl md:text-7xl font-black tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-500 dark:from-white dark:to-slate-500">
-              {startup.name}
-            </h1>
-            <p className="text-xl md:text-2xl text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-              {startup.pitch}
-            </p>
-          </motion.div>
-        </div>
+        <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
+          {startup.startup_name}
+        </h1>
+        <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg whitespace-pre-line">
+          {startup.fund_purpose}
+        </p>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-12 pb-32">
-        {/* LEFT: Content */}
-        <div className="lg:col-span-8 space-y-16">
-          {/* Video with Premium Frame */}
-          {startup.image && (
+      <main className="max-w-6xl mx-auto px-6 grid lg:grid-cols-12 gap-12 pb-24">
+        {/* LEFT COLUMN */}
+        <div className="lg:col-span-8 space-y-12">
+          {startup.image_url && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              className="group relative"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800"
             >
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-[2.5rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
-              <div className="relative aspect-video rounded-[2rem] overflow-hidden bg-black border border-white/10 shadow-2xl">
-                <img
-                  src={startup.image}
-                  alt={startup.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <img
+                src={startup.image_url}
+                className="w-full h-[450px] object-cover"
+                alt="Startup"
+              />
             </motion.div>
           )}
 
-          {/* About Section */}
-          <section className="relative">
-            <h3 className="text-3xl font-bold mb-8 flex items-center gap-4">
-              <span className="w-8 h-1 bg-blue-600 rounded-full" /> Төслийн
+          <section>
+            <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+              <span className="w-2 h-8 bg-blue-600 rounded-full" /> Төслийн
               тухай
             </h3>
-            <div className="prose prose-lg dark:prose-invert max-w-none text-slate-600 dark:text-slate-400 leading-loose">
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg whitespace-pre-line">
               {startup.description}
-            </div>
+            </p>
           </section>
 
-          {/* Team Grid */}
           <section>
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-3xl font-bold">Багийн гишүүд</h3>
-              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800 ml-8" />
-            </div>
+            <h3 className="text-2xl font-bold mb-6">Багийн гишүүд</h3>
             <div className="grid sm:grid-cols-2 gap-6">
-              {startup.team.map((m, i) => (
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  key={i}
-                  className="flex items-center gap-5 p-6 rounded-[2rem] bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-blue-500/30 transition-all"
+              {startup.team_members?.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm"
                 >
                   <img
-                    src={m.img}
+                    src={m.image || "/api/placeholder/100/100"}
+                    className="w-16 h-16 rounded-xl object-cover ring-2 ring-slate-100 dark:ring-slate-800"
                     alt={m.name}
-                    className="w-16 h-16 rounded-2xl object-cover ring-4 ring-slate-50 dark:ring-slate-800"
                   />
                   <div>
-                    <h4 className="text-lg font-bold">{m.name}</h4>
-                    <p className="text-blue-600 dark:text-blue-400 text-sm font-semibold tracking-wide uppercase">
-                      {m.role}
+                    <h4 className="font-bold text-lg">{m.name}</h4>
+                    <p className="text-sm text-blue-600 font-medium">
+                      {m.role_display}
                     </p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </section>
         </div>
 
-        {/* RIGHT: Stats Sidebar */}
+        {/* RIGHT SIDEBAR */}
         <div className="lg:col-span-4">
           <div className="sticky top-32 space-y-6">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
-              <div className="flex items-center justify-between mb-8">
-                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl">
-                  <TrendingUp className="text-blue-600" size={24} />
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    Funding Goal
-                  </p>
-                  <p className="text-xl font-bold">
-                    ${startup.fundGoal.toLocaleString()}
-                  </p>
-                </div>
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
+              {/* FUND AMOUNT */}
+              <div className="mb-8">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  Хүсэж буй хөрөнгийн хэмжээ
+                </p>
+
+                <p className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                  {startup.fund_amount.toLocaleString()} ₮
+                </p>
               </div>
 
-              <div className="space-y-4 mb-10">
-                <div className="flex justify-between items-end">
-                  <span className="text-5xl font-black text-slate-900 dark:text-white">
-                    {percent}%
-                  </span>
-                  <span className="text-sm font-bold text-blue-600 mb-1">
-                    Цугларсан
-                  </span>
-                </div>
-                <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-1">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percent}%` }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full relative shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+              {/* DIVIDER */}
+              <div className="border-t border-slate-200 dark:border-slate-800 my-6" />
+
+              {/* EQUITY */}
+              <div className="mb-8">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  Санал болгож буй хувь
+                </p>
+
+                <p className="text-3xl font-black text-blue-600">
+                  {startup.equity_offered}%
+                </p>
+              </div>
+
+              {/* PITCH DECK */}
+              {startup.pitch_deck_link && (
+                <div className="mb-4">
+                  <a
+                    href={startup.pitch_deck_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group w-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-700 dark:text-slate-300 py-4 rounded-2xl font-bold flex items-center justify-between px-6 transition-all border border-transparent hover:border-blue-200"
                   >
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[shimmer_2s_linear_infinite]" />
-                  </motion.div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-8 mb-8">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">
-                    Raised
-                  </p>
-                  <p className="text-lg font-bold">
-                    ${startup.raised.toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">
-                    Backers
-                  </p>
-                  <p className="text-lg font-bold">124</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-5 rounded-[1.5rem] font-bold flex items-center justify-center gap-3 hover:scale-[1.02] transition-transform active:scale-95 shadow-xl shadow-black/10">
-                  <Mail size={20} /> Холбоо барих
-                </button>
-
-                <div className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 transition-colors cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white dark:bg-slate-700 rounded-lg">
-                      <FileText size={18} className="text-slate-500" />
+                    <div className="flex items-center gap-3">
+                      <FileText size={20} className="text-blue-600" />
+                      <span>Pitch Deck.PDF</span>
                     </div>
-                    <span className="text-sm font-bold">Pitch Deck.pdf</span>
-                  </div>
-                  <Download
-                    size={18}
-                    className="text-slate-400 group-hover:text-blue-600 transition-colors"
-                  />
+                    <Download
+                      size={18}
+                      className="group-hover:translate-y-0.5 transition-transform"
+                    />
+                  </a>
                 </div>
-              </div>
+              )}
 
-              <div className="mt-8 flex items-center gap-2 justify-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                <ShieldCheck size={12} className="text-emerald-500" />{" "}
+              {/* BUTTON */}
+              <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-slate-200 dark:shadow-none">
+                <Mail size={20} /> Холбоо барих
+              </button>
+
+              {/* VERIFIED */}
+              <div className="mt-6 flex justify-center items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <ShieldCheck size={14} className="text-emerald-500" />
                 Баталгаажсан төсөл
               </div>
             </div>
 
-            {/* Minor Info Card */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] p-6 text-white">
-              <p className="text-sm font-medium opacity-80 mb-1">
+            {/* INFO CARD */}
+            <div className="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl text-white shadow-lg shadow-blue-200 dark:shadow-none">
+              <p className="text-sm font-medium opacity-90">
                 Хөрөнгө оруулалт хийхээс өмнө бүх эрсдэл болон нөхцөлтэй
                 танилцана уу.
               </p>

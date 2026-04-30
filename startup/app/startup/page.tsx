@@ -27,10 +27,17 @@ interface Startup {
   image_url: string;
 }
 
-
+interface PageContent {
+  id: number;
+  page_name: string;
+  content_key: string;
+  text_content: string;
+  updated_at: string;
+}
 
 export default function InvestPage() {
   const [startups, setStartups] = useState<Startup[]>([]);
+  const [contents, setContents] = useState<PageContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,6 +57,29 @@ export default function InvestPage() {
         } else if (data.results && Array.isArray(data.results)) {
           // Хэрэв Django Pagination ашиглаж байгаа бол дата 'results' дотор ирдэг
           setStartups(data.results);
+        }
+      } catch (error) {
+        console.error("API Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("http://127.0.0.1:8000/api/contents/");
+        const data = await response.json();
+
+        // Дата ирэх формат нь Array мөн эсэхийг шалгаад онооно
+        if (Array.isArray(data)) {
+          setContents(data);
+        } else if (data.results && Array.isArray(data.results)) {
+          // Хэрэв Django Pagination ашиглаж байгаа бол дата 'results' дотор ирдэг
+          setContents(data.results);
         }
       } catch (error) {
         console.error("API Error:", error);
@@ -93,6 +123,12 @@ export default function InvestPage() {
     }
   };
 
+  // Тухайн хуудсанд хамааралтай контентыг шүүж авах туслах функц
+  const getContent = (key: string, defaultValue: string) => {
+    const item = contents.find((c) => c.content_key === key);
+    return item ? item.text_content : defaultValue;
+  };
+
   // Хайлт хийх логик (Client-side filtering)
   const filteredStartups = startups.filter((s) => {
     const matchesSearch =
@@ -115,21 +151,25 @@ export default function InvestPage() {
 
       <div className="relative max-w-7xl mx-auto px-6 py-20">
         {/* --- 1. Header Section --- */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-2 gap-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-blue-500/10 text-slate-900 dark:text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-slate-200 dark:border-blue-500/20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-blue-500/10 text-slate-900 dark:text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 border border-slate-200 dark:border-blue-500/20">
               <TrendingUp size={14} className="text-blue-600" />
               <span>Хөрөнгө оруулалт</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl font-black tracking-tight dark:text-white">
-              Ирээдүйн <span className="text-blue-600">Юникорныг</span> <br />{" "}
-              эндээс ол.
-            </h1>
+            <h1
+              className="text-5xl md:text-6xl font-black tracking-tight dark:text-white whitespace-pre-line"
+              dangerouslySetInnerHTML={{
+                __html:
+                  getContent("startup_title", "Ирээдүйг <br /> эндээс ол.") ||
+                  "",
+              }}
+            />
           </motion.div>
 
           {/* --- 2. Filters & Search --- */}
@@ -240,42 +280,6 @@ export default function InvestPage() {
                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-10 line-clamp-2 font-medium">
                       {s.description}
                     </p>
-
-                    {/* Progress Bar */}
-                    <div className="space-y-4 mb-10 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem]">
-                      <div className="flex justify-between items-end">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Цугларсан
-                          </p>
-                          <p className="text-xl font-black text-slate-900 dark:text-white">
-                            {s.raised_amount.toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            Зорилт
-                          </p>
-                          <p className="text-sm font-bold text-blue-600">
-                            {s.fund_amount.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="relative w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${percent}%` }}
-                          transition={{ duration: 1.5, ease: "circOut" }}
-                          className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full relative"
-                        >
-                          <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                        </motion.div>
-                      </div>
-                      <p className="text-right text-[10px] font-black text-blue-600 uppercase">
-                        {percent}% Дууссан
-                      </p>
-                    </div>
 
                     <Link
                       href={`/startup/${s.id}`}

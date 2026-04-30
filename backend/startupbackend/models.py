@@ -175,8 +175,7 @@ class TeamMember(models.Model):
         default='member',
         verbose_name="Төрөл"
     )
-
-    image = models.URLField(blank=True, null=True)
+    image = models.FileField(upload_to='team_members/')
     linkedin_url = models.URLField(blank=True, null=True)
 
     def __str__(self):

@@ -3,14 +3,27 @@ from rest_framework import generics,viewsets,permissions,status,serializers,pars
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from .serializers import CustomUserCreateSerializer,ProjectSerializer,InvestorSerializer,WishlistSerializer,StartupGrowthSerializer,SiteContentSerializer
+from .serializers import CustomUserCreateSerializer,ProjectSerializer,InvestorSerializer,WishlistSerializer,StartupGrowthSerializer,SiteContentSerializer,TeamMemberSerializer
 from django.contrib.auth import get_user_model
 from .permissions import IsStartup
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
+from django.http import JsonResponse
+from django.core.files.storage import default_storage
+from django.views.decorators.csrf import csrf_exempt
 
 
 User = get_user_model()
+
+@csrf_exempt
+def image_upload(request):
+    if request.method == "POST":
+        file = request.FILES['file'] # TinyMCE 'file' гэж явуулдаг
+        file_name = default_storage.save(f"tinymce/{file.name}", file)
+        file_url = default_storage.url(file_name)
+        
+        # TinyMCE-д заавал 'location' гэсэн түлхүүрээр хариу өгөх ёстой
+        return JsonResponse({'location': f"http://127.0.0.1:8000{file_url}"})
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -43,36 +56,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             "message": "Таны стартап бүртгүүлэх хүсэлт амжилттай илгээгдлээ.",
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
-    
-# class InvestorViewSet(viewsets.ModelViewSet):
-#     queryset = Investor.objects.all()
-#     serializer_class = InvestorSerializer
-#     # permission_classes = [permissions.IsAuthenticated]
-#     permission_classes = [permissions.IsAuthenticated]
-#     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
-
-#     def create(self, request, *args, **kwargs):
-
-#         # 1. Хэрэглэгч нэвтрээгүй байх тохиолдлыг шалгах
-#         if not request.user.is_authenticated:
-#             return Response(
-#                 {"detail": "Энэ үйлдлийг хийхийн тулд нэвтрэх шаардлагатай."},
-#                 status=status.HTTP_401_UNAUTHORIZED
-#             )
-#         # 2. Хэрэглэгч аль хэдийн Investor профайлтай эсэхийг шалгах
-#         if Investor.objects.filter(user=request.user).exists():
-#             return Response(
-#                 {"detail": "Таны байгууллагын бүртгэл аль хэдийн үүссэн байна."},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-#         return super().create(request, *args, **kwargs)
-
-#     def perform_create(self, serializer):
-#         user = self.request.user
-#         user.role = 'investor'
-#         user.save()
-        
-#         serializer.save(user=user)
 
 
 class InvestorViewSet(viewsets.ModelViewSet):
@@ -129,7 +112,8 @@ class ListView(serializers.ModelSerializer):
 class StartupGrowthViewSet(viewsets.ModelViewSet):
     queryset = StartupGrowth.objects.all()
     serializer_class = StartupGrowthSerializer
-    
+    permission_classes = [AllowAny]
+
     # Сүүлийн 6 сарын өгөгдлийг шүүж авах нэмэлт функц (сонголтоор)
     def get_queryset(self):
         startup_id = self.request.query_params.get('startup_id')
@@ -143,3 +127,17 @@ class SiteContentViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     # id-аар биш slug-аар (content_key) хандах тохиргоо
     lookup_field = 'content_key'
+
+
+class TeamMemberViewSet(viewsets.ModelViewSet):
+    queryset = TeamMember.objects.all()
+    serializer_class = TeamMemberSerializer
+    permission_classes = [AllowAny]
+
+    # Хэрэв стартапаар нь шүүж харах шаардлагатай бол:
+    def get_queryset(self):
+        queryset = TeamMember.objects.all()
+        startup_id = self.request.query_params.get('startup_id')
+        if startup_id is not None:
+            queryset = queryset.filter(startup_id=startup_id)
+        return queryset

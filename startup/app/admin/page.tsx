@@ -186,8 +186,6 @@ export default function AdminDashboard() {
             active
           />
           <NavItem icon={<FileText size={20} />} label="Төслүүд" />
-          <NavItem icon={<Users size={20} />} label="Хэрэглэгчид" />
-          <NavItem icon={<Settings size={20} />} label="Тохиргоо" />
         </nav>
       </aside>
 
@@ -242,7 +240,7 @@ export default function AdminDashboard() {
                     menubar: false,
                     plugins: ["lists", "link", "image", "table", "code"],
                     toolbar:
-                      "undo redo | bold italic underline | bullist numlist | link image | code",
+                      "undo redo | bold italic underline | bullist numlist|forecolor backcolor | link image | code|blocks|alignleft aligncenter alignright",
                     skin: "oxide-dark",
                     content_css: "dark",
                     placeholder: "Агуулгаа энд бичнэ үү...",

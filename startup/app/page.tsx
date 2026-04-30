@@ -15,6 +15,7 @@ import {
 
 const HomePage = () => {
   const [darkMode, setDarkMode] = useState(false);
+  const [chartData, setChartData] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -24,6 +25,29 @@ const HomePage = () => {
       document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
+
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/startup-growth/");
+
+        const data = await res.json();
+
+        const formatted = (Array.isArray(data) ? data : [data]).map((item) => ({
+          month: item.label,
+          growth: item.percentage,
+        }));
+
+        setChartData(formatted);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    loadData();
+  }, []);
+
 
   // Startup route хамгаалалт
   const handleApplyRoute = () => {
@@ -66,16 +90,6 @@ const HomePage = () => {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 },
   };
-
-  // Chart Data
-  const chartData = [
-    { month: "1 сар", growth: 40 },
-    { month: "2 сар", growth: 70 },
-    { month: "3 сар", growth: 45 },
-    { month: "4 сар", growth: 90 },
-    { month: "5 сар", growth: 65 },
-    { month: "6 сар", growth: 80 },
-  ];
 
   const chartConfig = {
     growth: {
@@ -139,13 +153,11 @@ const HomePage = () => {
             <BarChart3 className="text-blue-600" />
           </div>
 
-          {/* SHADCN CHART */}
           <div className="h-[320px]">
             <ChartContainer config={chartConfig} className="h-full w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <XAxis dataKey="month" tickLine={false} axisLine={false} />
-
                   <YAxis tickLine={false} axisLine={false} />
 
                   <ChartTooltip

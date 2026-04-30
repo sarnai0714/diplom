@@ -95,11 +95,10 @@ export default function ProfilePage() {
             <nav className="space-y-2">
               <SidebarItem
                 icon={<LayoutGrid size={20} />}
-                label="Хяналтын самбар"
+                label="Хувийн мэдээлэл"
                 active
               />
-              <SidebarItem icon={<Briefcase size={20} />} label="Портфолио" />
-              <SidebarItem icon={<Wallet size={20} />} label="Санхүү" />
+        
 
               <button
                 onClick={() => setShowRequests(true)}
@@ -115,8 +114,6 @@ export default function ProfilePage() {
               </button>
 
               <div className="my-6 border-t border-slate-200 dark:border-slate-800" />
-
-              <SidebarItem icon={<Settings size={20} />} label="Тохиргоо" />
               <SidebarItem icon={<LogOut size={20} />} label="Гарах" danger />
             </nav>
           </motion.div>
@@ -127,7 +124,7 @@ export default function ProfilePage() {
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-black">
-                Сайн байна уу, хөрөнгө оруулагч 👋
+                Сайн байна уу, хөрөнгө оруулагч 
               </h1>
               <p className="text-slate-500 mt-1">
                 Танд шинэ startup хүсэлтүүд ирсэн байна.
@@ -148,14 +145,13 @@ export default function ProfilePage() {
               trend="+5.4%"
               trendUp
             />
-            <StatCard label="Идэвхтэй төсөл" value="12" trend="+2" trendUp />
             <StatCard label="Шинэ хүсэлт" value="03" trend="Today" trendUp />
           </div>
 
           {/* Portfolio */}
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black">Миний төслүүд</h2>
+              <h2 className="text-xl font-black">Миний мэдээлэл</h2>
               <button className="text-blue-600 font-bold text-sm">
                 Бүгдийг үзэх
               </button>

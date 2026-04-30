@@ -9,7 +9,6 @@ class CustomUserSerializer(UserSerializer):
         fields = ("id", "username", "email","password","role")
         extra_kwargs = {'password': {'write_only': True}}
 
-
 class CustomUserCreateSerializer(UserCreateSerializer):
 
     class Meta(UserCreateSerializer.Meta):
@@ -29,8 +28,18 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
     def to_representation(self, instance):
         return CustomUserSerializer(instance, context=self.context).data
+    
+
+class TeamMemberSerializer(serializers.ModelSerializer):
+    # Ролийн тайлбарыг (Ахлагч, Гишүүн) уншигдахуйц байдлаар авах
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+    
+    class Meta:
+        model = TeamMember
+        fields = '__all__'
 
 class ProjectSerializer(serializers.ModelSerializer):
+    team_members = TeamMemberSerializer(many=True, read_only=True)
     class Meta:
         model = Startup
         # Хэрэглэгч бөглөх шаардлагагүй талбаруудыг read_only болгоно
@@ -81,11 +90,13 @@ class InvestorSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
     
 class WishlistSerializer(serializers.ModelSerializer):
+    startup_details = ProjectSerializer(source='startup', read_only=True)
     class Meta:
         model = Wishlist
-        fields = ['id', 'startup', 'added_at']
-        read_only_fields = ['added_at']
+        fields = '__all__'
+        read_only_fields = ['added_at','user']
 
+        
     def validate(self, data):
         user = self.context['request'].user
         startup = data.get('startup')
