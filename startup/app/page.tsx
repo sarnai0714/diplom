@@ -2,52 +2,37 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Rocket, Target, BarChart3, ChevronRight, Zap } from "lucide-react";
+import {
+  Rocket,
+  Target,
+  BarChart3,
+  ChevronRight,
+  Zap,
+  ArrowUpRight,
+  ShieldCheck,
+  Globe,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
-
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-
 const HomePage = () => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [chartData, setChartData] = useState([]);
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (darkMode) {
+    const savedTheme = localStorage.getItem("theme");
+    const systemPrefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    const isDark = savedTheme === "dark" || (!savedTheme && systemPrefersDark);
+
+    if (isDark) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, [darkMode]);
 
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:8000/api/startup-growth/");
-
-        const data = await res.json();
-
-        const formatted = (Array.isArray(data) ? data : [data]).map((item) => ({
-          month: item.label,
-          growth: item.percentage,
-        }));
-
-        setChartData(formatted);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    loadData();
+    setMounted(true);
   }, []);
-
 
   // Startup route хамгаалалт
   const handleApplyRoute = () => {
@@ -85,40 +70,89 @@ const HomePage = () => {
     router.push("/hh");
   };
 
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 },
+  const handleAdminRoute = () => {
+    if (typeof window !== "undefined") {
+      // Браузер дээр байгаа эсэхийг баталгаажуулах
+      const token = localStorage.getItem("access");
+      const role = localStorage.getItem("role");
+
+      console.log("Token:", token); // Debug
+      console.log("Role:", role); // Debug
+
+      if (!token || token === "undefined" || token === "null") {
+        router.push("/login");
+        return;
+      }
+
+      // Role-ийг жижиг үсгээр харьцуулж, хоосон зай байгаа эсэхийг шалгах (.trim())
+      if (role?.toLowerCase().trim() !== "admin") {
+        alert("Энэ хэсэг зөвхөн Admin хэрэглэгчдэд зориулагдсан.");
+        return;
+      }
+
+      router.push("/admin");
+    }
   };
 
-  const chartConfig = {
-    growth: {
-      label: "Өсөлт",
-      color: "blue",
-    },
+  if (!mounted) return null;
+
+  const handleRoute = (targetRole, path) => {
+    const token = localStorage.getItem("access");
+    const role = localStorage.getItem("role");
+
+    if (!token) return router.push("/login");
+    if (role !== targetRole) {
+      alert(`Энэ хэсэг зөвхөн ${targetRole} хэрэглэгчдэд зориулагдсан.`);
+      return;
+    }
+    router.push(path);
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-500 font-sans selection:bg-blue-500/30">
+      {/* --- Ambient Background --- */}
       <div className="absolute left-0 top-0 h-[500px] w-[500px] rounded-full bg-blue-500/20 blur-[140px]" />
       <div className="absolute right-0 bottom-0 h-[500px] w-[500px] rounded-full bg-fuchsia-500/20 blur-[140px]" />
-      {/* HERO */}
-      <section className="max-w-7xl mx-auto px-8 py-24 flex flex-col items-center text-center">
-        <motion.div {...fadeIn}>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold mb-8 uppercase tracking-widest">
-            <Zap size={14} className="fill-current" />
-            <span>V1.0 Шинээр гарлаа</span>
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-blue-500/10 blur-[120px] animate-pulse" />
+        <div
+          className="absolute top-[20%] -right-[10%] h-[40%] w-[40%] rounded-full bg-purple-500/10 blur-[120px] animate-bounce"
+          style={{ animationDuration: "10s" }}
+        />
+      </div>
+
+      {/* --- HERO SECTION --- */}
+      <section className="relative max-w-7xl mx-auto px-6 pt-32 pb-20 flex flex-col items-center text-center overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="z-10 flex flex-col items-center text-center"
+        >
+          {/* --- Minimalist Badge --- */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 dark:bg-blue-400/5 backdrop-blur-md border border-blue-500/20 dark:border-blue-400/10 mb-8 group">
+            <Zap
+              size={14}
+              className="text-blue-600 dark:text-blue-400 fill-blue-600/20 group-hover:scale-110 transition-transform"
+            />
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
+              V1.0 Шинээр гарлаа
+            </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 leading-[1.1]">
+          {/* --- Title with Blue-Violet Gradient --- */}
+          <h1 className="text-4xl md:text-8xl font-[950] mb-8 tracking-tighter leading-[1.05] text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-400 dark:to-violet-500">
             Ирээдүйн Юникорныг <br /> Өнөөдөр Дэмжье
           </h1>
 
-          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-10 leading-relaxed">
-            Бид гарааны бизнес эрхлэгчдийг хөрөнгө оруулагчидтай холбож,
+          {/* --- Clean Subtext --- */}
+          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mb-12 leading-relaxed font-medium">
+            Бид гарааны бизнес эрхлэгчдийг хөрөнгө оруулагчидтай холбож,{" "}
+            <br className="hidden md:block" />
             инновацилаг санааг бодит ажил хэрэг болгоход тусална.
           </p>
 
+          {/* --- Action Buttons --- */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={handleApplyRoute}
@@ -135,96 +169,123 @@ const HomePage = () => {
             </button>
           </div>
         </motion.div>
-      </section>
 
-      {/* CHART */}
-      <section className="max-w-5xl mx-auto px-8 mb-24">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-2xl"
-        >
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h3 className="text-xl font-bold mb-1">Төслийн өсөлт</h3>
-              <p className="text-sm text-slate-500">Сүүлийн 6 сарын байдлаар</p>
+        {/* Floating Badges */}
+        <div className="hidden lg:block">
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 4 }}
+            className="absolute top-1/4 left-10 p-4 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-100 dark:border-white/5 rotate-12"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500">
+                <Zap size={16} />
+              </div>
+              <span className="text-sm font-bold">Fast Funding</span>
             </div>
-
-            <BarChart3 className="text-blue-600" />
-          </div>
-
-          <div className="h-[320px]">
-            <ChartContainer config={chartConfig} className="h-full w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                  <YAxis tickLine={false} axisLine={false} />
-
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-
-                  <Bar
-                    dataKey="growth"
-                    radius={[12, 12, 0, 0]}
-                    fill="var(--color-growth)"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </motion.div>
+          </motion.div>
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ repeat: Infinity, duration: 5 }}
+            className="absolute bottom-1/4 right-10 p-4 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-100 dark:border-white/5 -rotate-6"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-500">
+                <Target size={16} />
+              </div>
+              <span className="text-sm font-bold">Smart Match</span>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
-      {/* FEATURES */}
-      <section className="relative py-32 bg-slate-50/50 dark:bg-[#060b18] transition-colors overflow-hidden">
-        <div className="relative max-w-7xl mx-auto px-8">
-          <div className="text-center max-w-2xl mx-auto mb-20">
-            <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">
-              Системийн <span className="text-blue-600">давуу талууд</span>
-            </h2>
+      {/* --- BENTO GRID FEATURES --- */}
+      <section className="max-w-7xl mx-auto px-6 py-32">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Large Card */}
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="md:col-span-2 relative overflow-hidden p-10 rounded-[3rem] bg-gradient-to-br from-blue-600 to-indigo-900 text-white"
+          >
+            <div className="relative z-10">
+              <Globe className="w-12 h-12 mb-6 opacity-80" />
+              <h3 className="text-4xl font-bold mb-4 tracking-tight">
+                Дэлхийн зах зээлд <br /> хамтдаа гаръя
+              </h3>
+              <p className="text-blue-100 max-w-md text-lg leading-relaxed">
+                Бид зөвхөн Монгол биш, олон улсын венчур капиталуудтай хамтарч
+                ажилладаг. Таны төсөл дэлхийд гарах гарц эндээс эхэлнэ.
+              </p>
+            </div>
+            <div className="absolute right-[-10%] bottom-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+          </motion.div>
 
-            <p className="text-slate-500 dark:text-slate-400 text-lg">
-              Зөвхөн хөрөнгө оруулалт биш, тогтвортой өсөлтийг бий болгох дэд
-              бүтэц.
+          {/* Small Card 1 */}
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm"
+          >
+            <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-500 mb-8">
+              <ShieldCheck size={28} />
+            </div>
+            <h3 className="text-2xl font-bold mb-4">Найдвартай</h3>
+            <p className="text-slate-500 dark:text-slate-400">
+              Бүх гэрээ хэлцэл хууль ёсны дагуу, нууцлалын өндөр зэрэгт
+              явагдана.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Хөрөнгө оруулалт",
-                desc: "Шилдэг төслүүдийг нэг дороос харж, эрсдэл багатайгаар хөрөнгө оруулах боломж.",
-                icon: <Target className="w-7 h-7" />,
-              },
-              {
-                title: "Менторшип",
-                desc: "Туршлагатай бизнес эрхлэгчдээс зөвлөгөө авах.",
-                icon: <Rocket className="w-7 h-7" />,
-              },
-              {
-                title: "Дата шинжилгээ",
-                desc: "Өсөлтийг хянах ухаалаг систем.",
-                icon: <BarChart3 className="w-7 h-7" />,
-              },
-            ].map((feature, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -10 }}
-                className="group p-10 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 transition-all duration-500 shadow-sm hover:shadow-2xl"
-              >
-                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl mb-8 flex items-center justify-center text-blue-600">
-                  {feature.icon}
-                </div>
+          {/* Small Card 2 */}
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="p-10 rounded-[3rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm"
+          >
+            <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 mb-8">
+              <BarChart3 size={28} />
+            </div>
+            <h3 className="text-2xl font-bold mb-4">Дата-д суурилсан</h3>
+            <p className="text-slate-500 dark:text-slate-400">
+              Төслийн өсөлтийг бодит дата, KPI үзүүлэлтээр хянах боломж.
+            </p>
+          </motion.div>
 
-                <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
+          {/* Wide Card */}
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="md:col-span-2 group p-10 rounded-[3rem] bg-slate-900 dark:bg-white text-white dark:text-slate-900 transition-colors flex flex-col md:flex-row justify-between items-center gap-8"
+          >
+            <div>
+              <h3 className="text-3xl font-black mb-4">Менторшип хөтөлбөр</h3>
+              <p className="text-slate-400 dark:text-slate-500 max-w-sm">
+                Силикон хөндийн туршлагатай монгол инженерүүдээс зөвлөгөө авах
+                боломжтой.
+              </p>
+            </div>
+            <div className="flex -space-x-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="w-14 h-14 rounded-full border-4 border-slate-900 dark:border-white bg-slate-800 dark:bg-slate-200"
+                />
+              ))}
+              <div className="w-14 h-14 rounded-full border-4 border-slate-900 dark:border-white bg-blue-600 flex items-center justify-center font-bold text-white">
+                +20
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
-                <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-                  {feature.desc}
-                </p>
-              </motion.div>
-            ))}
+      {/* --- CTA SECTION --- */}
+      <section className="max-w-5xl mx-auto px-6 py-32">
+        <div className="relative p-1 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 rounded-[4rem]">
+          <div className="bg-white dark:bg-slate-950 rounded-[3.9rem] px-8 py-20 text-center">
+            <h2 className="text-4xl md:text-5xl font-black mb-8">
+              Өнөөдөр эхлэхэд бэлэн үү?
+            </h2>
+            <button className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-12 py-5 rounded-2xl font-black text-lg hover:scale-105 transition-transform">
+              Одоо нэгдэх
+            </button>
           </div>
         </div>
       </section>

@@ -245,7 +245,10 @@ class Investor(models.Model):
         default=False, 
         verbose_name="Баталгаажсан эсэх"
     )
-    
+    # Газрын зурагт зориулсан координатууд
+    address = models.CharField(max_length=500,default='Talbai') # Текст хаяг
+    latitude = models.FloatField(null=True, blank=True) # Газрын зургийн координат
+    longitude = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -405,3 +408,43 @@ class SiteContent(models.Model):
     class Meta:
         verbose_name = "Сайтын контент"
         verbose_name_plural = "Сайтын контентууд"
+
+
+class StartupRequest(models.Model):
+    startup_name = models.CharField(max_length=255, verbose_name="Стартап нэр")
+    description = models.TextField(verbose_name="Танилцуулга")
+
+    # Хэн илгээв
+    startup = models.ForeignKey(
+    "Startup",
+    on_delete=models.CASCADE,
+    related_name="requests_sent"
+)
+
+    investor = models.ForeignKey(
+        "Investor",
+        on_delete=models.CASCADE,
+        related_name="requests_received"
+    )
+
+    meeting_requested = models.BooleanField(default=False, verbose_name="Уулзалт хүссэн эсэх")
+
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Хүлээгдэж байна"),
+            ("approved", "Зөвшөөрсөн"),
+            ("rejected", "Татгалзсан"),
+        ],
+        default="pending",
+        verbose_name="Төлөв"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.startup_name} → {self.investor}"
+
+    class Meta:
+        verbose_name = "Стартап хүсэлт"
+        verbose_name_plural = "Стартап хүсэлтүүд"

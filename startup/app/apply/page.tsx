@@ -131,6 +131,8 @@ export default function ApplyPage() {
           </div>
         )}
 
+        
+
         <AnimatePresence mode="wait">
           {step === 0 && <Intro key="intro" onNext={next} />}
           {step === 1 && (

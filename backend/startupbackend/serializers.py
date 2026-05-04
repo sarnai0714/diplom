@@ -115,4 +115,23 @@ class StartupGrowthSerializer(serializers.ModelSerializer):
 class SiteContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteContent
-        fields = ['id', 'page_name', 'content_key', 'text_content', 'updated_at']
+        fields = '__all__'
+
+
+class StartupRequestSerializer(serializers.ModelSerializer):
+    startup_detail = ProjectSerializer(source='startup', read_only=True)
+    investor_detail = InvestorSerializer(source='investor', read_only=True)
+
+    class Meta:
+        model = StartupRequest
+        fields = "__all__"
+        # startup_name-ийг энд read_only болгочихвол Frontend-ээс заавал явуулах албагүй болно
+        read_only_fields = ["status", "created_at", "startup_name"]
+
+    def create(self, validated_data):
+        # Хэрэв startup холбоос байгаа бол түүний нэрийг startup_name-д оноох
+        startup_obj = validated_data.get('startup')
+        if startup_obj:
+            validated_data['startup_name'] = startup_obj.startup_name
+        
+        return super().create(validated_data)

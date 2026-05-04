@@ -47,6 +47,11 @@ export default function StartupDetailPage() {
   const [startup, setStartup] = useState<Startup | null>(null);
   const [wishlist, setWishlist] = useState<number[]>([]);
 
+  const formatMoney = (amount: number | string) => {
+    const num = Number(amount || 0);
+    return new Intl.NumberFormat("en-US").format(num) + " ₮";
+  };
+
   useEffect(() => {
     if (!id) return;
 
@@ -217,13 +222,12 @@ export default function StartupDetailPage() {
           <div className="sticky top-32 space-y-6">
             <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
               {/* FUND AMOUNT */}
-              <div className="mb-8">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+              <div className="mb-6">
+                <p className="text-xs text-slate-400 mb-2">
                   Хүсэж буй хөрөнгийн хэмжээ
                 </p>
-
-                <p className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                  {startup.fund_amount.toLocaleString()} ₮
+                <p className="text-3xl font-black">
+                  {formatMoney(startup.fund_amount)}
                 </p>
               </div>
 

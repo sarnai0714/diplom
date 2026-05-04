@@ -4,13 +4,19 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .serializers import CustomUserCreateSerializer,ProjectSerializer,InvestorSerializer,WishlistSerializer,StartupGrowthSerializer,SiteContentSerializer,TeamMemberSerializer
+from .serializers import StartupRequestSerializer
 from django.contrib.auth import get_user_model
-from .permissions import IsStartup
+from .permissions import IsStartup,IsAdmin
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.core.files.storage import default_storage
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import action, api_view,permission_classes
+from django.db.models import Count, Sum  # <--- Үүнийг нэм
+import datetime
+from django.utils.timezone import now
+from django.db.models.functions import TruncMonth
 
 
 User = get_user_model()
@@ -24,11 +30,103 @@ def image_upload(request):
         
         # TinyMCE-д заавал 'location' гэсэн түлхүүрээр хариу өгөх ёстой
         return JsonResponse({'location': f"http://127.0.0.1:8000{file_url}"})
+    
+
+@api_view(['GET'])
+@permission_classes([AllowAny])  # Энэ мөр "Authentication credentials were not provided" алдааг арилгана
+def startup_stats(request):
+    # 1. Үндсэн тоонууд
+    startup_count = Startup.objects.count()
+    user_count = CustomUser.objects.count() 
+    investor_count = Investor.objects.count()
+
+    # 2. Нийт санхүүжилтийг DB түвшинд тооцоолох
+    # s.fund_amount-ийг float болгож заавал хөрвүүлэх шаардлагагүй, DB Sum илүү хурдан
+    total_funding_data = Startup.objects.aggregate(total=Sum('fund_amount'))
+    total_funding = total_funding_data['total'] or 0
+
+    # 3. Салбараар нь ангилж тоолох (Frontend-ийн BarChart-д зориулсан)
+    industry_data = (
+        Startup.objects.values('industry')
+        .annotate(count=Count('id'))
+        .order_by('-count')
+    )
+
+    # Жагсаалтыг React-д ойлгомжтой формат руу хөрвүүлэх
+    categories = [
+        {"name": item['industry'], "count": item['count']} 
+        for item in industry_data
+    ]
+
+    return Response({
+        "startup_count": startup_count,
+        "investor_count": investor_count,
+        "user_count": user_count,
+        "total_funding": total_funding,
+        "categories": categories  # Графикийн өгөгдөл
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def user_growth(request):
+    data = (
+        User.objects
+        .annotate(month=TruncMonth('date_joined'))
+        .values('month')
+        .annotate(user_count=Count('id'))
+        .order_by('month')
+    )
+
+    # dict болгох (lookup хурдан)
+    data_dict = {
+        item["month"].strftime("%Y-%m"): item["user_count"]
+        for item in data
+    }
+
+    result = []
+    total = 0
+
+    current = now().replace(day=1)
+    start = current - datetime.timedelta(days=180)  # сүүлийн 6 сар
+
+    while start <= current:
+        key = start.strftime("%Y-%m")
+        count = data_dict.get(key, 0)
+
+        total += count
+
+        result.append({
+            "month": f"{start.month}-р сар",
+            "user_count": total
+        })
+
+        # дараагийн сар
+        if start.month == 12:
+            start = start.replace(year=start.year + 1, month=1)
+        else:
+            start = start.replace(month=start.month + 1)
+
+    return Response(result)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = CustomUserCreateSerializer
     permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.save()
+
+        return Response(
+            {
+                "message": "Хэрэглэгч амжилттай бүртгэгдлээ",
+                "user": CustomUserCreateSerializer(user).data
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Startup.objects.all()
@@ -56,8 +154,39 @@ class ProjectViewSet(viewsets.ModelViewSet):
             "message": "Таны стартап бүртгүүлэх хүсэлт амжилттай илгээгдлээ.",
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAdminUser])
+    def update_status(self, request, pk=None):
+        """
+        Стартапын төлөвийг шинэчлэх (Зөвхөн админ)
+        Body: {"status": "accepted"}
+        """
+        startup = self.get_object()
+        new_status = request.data.get('status')
+        
+        # Зөвшөөрөгдсөн төлөвүүд эсэхийг шалгах
+        valid_statuses = [choice[0] for choice in Startup.STATUS_CHOICES]
+        
+        if new_status not in valid_statuses:
+            return Response(
+                {"error": f"Буруу төлөв. Дараах утгуудын аль нэгийг илгээнэ үү: {', '.join(valid_statuses)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        startup.status = new_status
+        startup.save()
+        
+        return Response({
+            "message": f"Стартапын төлөв амжилттай '{new_status}' болж өөрчлөгдлөө.",
+            "status": startup.status
+        })
 
+class MyStartupViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ProjectSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Startup.objects.filter(user=self.request.user)
 class InvestorViewSet(viewsets.ModelViewSet):
     queryset = Investor.objects.all()
     serializer_class = InvestorSerializer
@@ -65,25 +194,35 @@ class InvestorViewSet(viewsets.ModelViewSet):
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def create(self, request, *args, **kwargs):
-        # 1. Хэрэглэгч нэг ижил регистртэй байгууллага дахин бүртгэхийг оролдож байгааг шалгах
         reg_num = request.data.get('registration_number')
+
         if Investor.objects.filter(user=request.user, registration_number=reg_num).exists():
             return Response(
                 {"detail": "Та энэ регистрийн дугаартай байгууллагыг аль хэдийн бүртгэсэн байна."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # 1 хэрэглэгч олон өөр регистртэй хөрөнгө оруулагч бүртгэх нь одоо нээлттэй
-        return super().create(request, *args, **kwargs)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+
+        return Response(
+            {
+                "message": "Investor амжилттай үүсгэлээ",
+                "data": serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
 
     def perform_create(self, serializer):
         with transaction.atomic():
             user = self.request.user
-            # Хэрэглэгчийн үүргийг хөрөнгө оруулагч болгох (анхны удаа бүртгүүлэхэд)
+
             if user.role != 'investor':
                 user.role = 'investor'
                 user.save()
-            
+
             serializer.save(user=user)
 
 class WishlistViewSet(viewsets.ModelViewSet):
@@ -100,6 +239,20 @@ class WishlistViewSet(viewsets.ModelViewSet):
             )
 
         serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+
+        return Response(
+            {
+                "message": "Төсөл амжилттай хадгалагдлаа ❤️",
+                "data": serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 class ListView(serializers.ModelSerializer):
     """Хэрэглэгч өөрийн илгээсэн хүсэлтүүдийг харах хэсэг"""
@@ -134,10 +287,66 @@ class TeamMemberViewSet(viewsets.ModelViewSet):
     serializer_class = TeamMemberSerializer
     permission_classes = [AllowAny]
 
-    # Хэрэв стартапаар нь шүүж харах шаардлагатай бол:
     def get_queryset(self):
         queryset = TeamMember.objects.all()
         startup_id = self.request.query_params.get('startup_id')
         if startup_id is not None:
             queryset = queryset.filter(startup_id=startup_id)
         return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response(
+            {
+                "message": "Гишүүн амжилттай нэмэгдлээ",
+                "data": serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
+    
+class StartupRequestViewSet(viewsets.ModelViewSet):
+    queryset = StartupRequest.objects.all()
+    serializer_class = StartupRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    # ✅ ROLE-BASED DATA FILTERING
+    def get_queryset(self):
+        user = self.request.user
+
+        # Investor → зөвхөн өөрт хамаарах request
+        if getattr(user, "role", None) == "investor":
+            return StartupRequest.objects.filter(investor__user=user)
+
+        # Startup → өөрийн илгээсэн request
+        if getattr(user, "role", None) == "startup":
+            return StartupRequest.objects.filter(startup__user=user)
+
+        return StartupRequest.objects.none()
+    
+
+    # ✅ STARTUP ONLY CREATE REQUEST
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        if getattr(user, "role", None) != "startup":
+            raise PermissionDenied("Зөвхөн startup хүсэлт илгээж болно")
+
+        serializer.save()
+
+    # ✅ CUSTOM RESPONSE (optional)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+
+        return Response(
+            {
+                "message": "Хүсэлт амжилттай илгээгдлээ",
+                "data": serializer.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )

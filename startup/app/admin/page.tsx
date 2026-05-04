@@ -10,88 +10,60 @@ import {
   Save,
   LayoutDashboard,
   FileText,
-  Users,
-  Settings,
   Eye,
   Loader2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-// API URL
-const API_BASE_URL = "http://127.0.0.1:8000/api/contents/";
-
-// --- Mock Data (Туршилтын өгөгдөл - Төслүүдийн хувьд) ---
-const initialProjects = [
-  {
-    id: 1,
-    name: "EcoWaste Solution",
-    founder: "Бат-Эрдэнэ",
-    industry: "Green Tech",
-    status: "pending",
-    date: "2026-04-20",
-  },
-  {
-    id: 2,
-    name: "Surgalt App",
-    founder: "Дулмаа",
-    industry: "EdTech",
-    status: "approved",
-    date: "2026-04-18",
-  },
-  {
-    id: 3,
-    name: "FinSave Gamified",
-    founder: "Болд",
-    industry: "Fintech",
-    status: "pending",
-    date: "2026-04-21",
-  },
-  {
-    id: 4,
-    name: "Smart Farm Pro",
-    founder: "Сараа",
-    industry: "AgriTech",
-    status: "rejected",
-    date: "2026-04-15",
-  },
-];
+// API URLs
+const CONTENT_API_URL = "http://127.0.0.1:8000/api/contents/";
+const PROJECT_API_URL = "http://127.0.0.1:8000/api/projects/";
 
 export default function AdminDashboard() {
   // --- States ---
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
 
   // Content API States
-  const [contentData, setContentData] = useState<any[]>([]); // API-аас ирэх бүх текстүүд
-  const [selectedKey, setSelectedKey] = useState(""); // Сонгогдсон slug
-  const [editorContent, setEditorContent] = useState(""); // Editor доторх текст
+  const [contentData, setContentData] = useState<any[]>([]);
+  const [selectedKey, setSelectedKey] = useState("");
+  const [editorContent, setEditorContent] = useState("");
+
+  // Loading States
   const [isLoading, setIsLoading] = useState(true);
+  const [isProjectsLoading, setIsProjectsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // --- 1. API-аас өгөгдөл татах ---
-  useEffect(() => {
-    fetchContents();
-  }, []);
+  // --- 1. Төслүүдийг татах (GET) ---
+  const fetchProjects = async () => {
+    setIsProjectsLoading(true);
+    try {
+      const token = localStorage.getItem("access");
+      const response = await fetch(PROJECT_API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      const actualData = Array.isArray(data) ? data : data.results || [];
+      setProjects(actualData);
+    } catch (error) {
+      console.error("Төслүүдийг татахад алдаа гарлаа:", error);
+    } finally {
+      setIsProjectsLoading(false);
+    }
+  };
 
+  // --- 2. Веб текстүүдийг татах (GET) ---
   const fetchContents = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("access"); // Энд таны token байгаа эсэхийг шалгаарай
-
-      const response = await fetch(API_BASE_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const token = localStorage.getItem("access");
+      const response = await fetch(CONTENT_API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.status === 401) {
-        console.error("Нэвтрэх эрхгүй байна. Token-оо шалгана уу.");
-        return;
-      }
-
       const data = await response.json();
-      // Django Pagination ашиглаж байгаа бол data.results, үгүй бол data
       const actualData = Array.isArray(data) ? data : data.results || [];
-
       setContentData(actualData);
 
       if (actualData.length > 0) {
@@ -105,33 +77,49 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- 2. Select солигдоход Editor-ийн утгыг шинэчлэх ---
   useEffect(() => {
-    const activeItem = contentData.find(
-      (item) => item.content_key === selectedKey,
-    );
-    if (activeItem) {
-      setEditorContent(activeItem.text_content);
-    }
-  }, [selectedKey, contentData]);
+    fetchContents();
+    fetchProjects();
+  }, []);
 
-  // --- 3. Текст хадгалах (PATCH) ---
+  // --- 3. Төслийн төлөв өөрчлөх (PATCH) ---
+  const handleUpdateStatus = async (id: number, newStatus: string) => {
+    try {
+      const token = localStorage.getItem("access");
+      const response = await fetch(`${PROJECT_API_URL}${id}/update_status/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        setProjects((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
+        );
+      } else {
+        const err = await response.json();
+        alert(`Алдаа: ${err.error || "Төлөв солиход алдаа гарлаа"}`);
+      }
+    } catch (error) {
+      alert("Сервертэй холбогдоход алдаа гарлаа.");
+    }
+  };
+
+  // --- 4. Веб текст хадгалах (PATCH) ---
   const handleSaveContent = async () => {
-    // contentData дотроос одоо сонгогдсон key-ээр объектыг хайх
     const activeItem = contentData.find(
       (item) => item.content_key === selectedKey,
     );
-
-    if (!activeItem || !activeItem.id) {
-      alert("Хадгалах объект олдсонгүй (ID дутуу).");
-      return;
-    }
+    if (!activeItem) return;
 
     setIsSaving(true);
     try {
       const token = localStorage.getItem("access");
       const response = await fetch(
-        `${API_BASE_URL}${activeItem.content_key}/`,
+        `${CONTENT_API_URL}${activeItem.content_key}/`,
         {
           method: "PATCH",
           headers: {
@@ -141,33 +129,29 @@ export default function AdminDashboard() {
           body: JSON.stringify({ text_content: editorContent }),
         },
       );
-      console.log(editorContent);
+
       if (response.ok) {
         const updated = await response.json();
         setContentData((prev) =>
           prev.map((c) => (c.id === updated.id ? updated : c)),
         );
         alert("Амжилттай хадгалагдлаа!");
-      } else {
-        alert(`Алдаа гарлаа: ${response.status}`);
       }
     } catch (error) {
-      alert("Сервертэй холбогдоход алдаа гарлаа.");
+      alert("Алдаа гарлаа.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Төслийн төлөв өөрчлөх (Local)
-  const handleStatus = (id: number, newStatus: string) => {
-    setProjects(
-      projects.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
-    );
-  };
-
-  const filteredProjects = projects.filter(
-    (p) => filter === "all" || p.status === filter,
-  );
+  // --- Шүүлтүүр ---
+  const filteredProjects = projects.filter((p) => {
+    const matchesFilter = filter === "all" || p.status === filter;
+    const matchesSearch = p.startup_name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex font-sans">
@@ -193,7 +177,7 @@ export default function AdminDashboard() {
       <main className="flex-1 p-8 overflow-y-auto">
         {/* 1. Content Editor Section */}
         <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 p-8 shadow-sm mb-12">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <h2 className="text-2xl font-black flex items-center gap-3 dark:text-white">
               <div className="p-2 bg-blue-100 dark:bg-blue-500/10 rounded-lg">
                 <FileText className="text-blue-600" size={24} />
@@ -207,17 +191,13 @@ export default function AdminDashboard() {
               onChange={(e) => {
                 const newKey = e.target.value;
                 setSelectedKey(newKey);
-                // Сонгогдсон key-ээр тухайн объектыг олж editor-т утгыг оноох
                 const item = contentData.find((c) => c.content_key === newKey);
                 if (item) setEditorContent(item.text_content);
               }}
               className="w-full md:w-auto bg-slate-100 dark:bg-slate-800 dark:text-white px-5 py-3 rounded-2xl outline-none border border-transparent focus:border-blue-500 font-bold transition-all cursor-pointer"
             >
               {contentData.map((item, index) => (
-                <option
-                  key={item.id || item.content_key || index}
-                  value={item.content_key}
-                >
+                <option key={item.id || index} value={item.content_key}>
                   [{item.page_name}] - {item.content_key}
                 </option>
               ))}
@@ -243,7 +223,6 @@ export default function AdminDashboard() {
                       "undo redo | bold italic underline | bullist numlist|forecolor backcolor | link image | code|blocks|alignleft aligncenter alignright",
                     skin: "oxide-dark",
                     content_css: "dark",
-                    placeholder: "Агуулгаа энд бичнэ үү...",
                   }}
                 />
               )}
@@ -252,7 +231,7 @@ export default function AdminDashboard() {
             <button
               onClick={handleSaveContent}
               disabled={isSaving || isLoading}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 active:scale-95"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 size={18} className="animate-spin" />
@@ -282,13 +261,15 @@ export default function AdminDashboard() {
             <input
               type="text"
               placeholder="Төсөл хайх..."
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all dark:text-white shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all dark:text-white"
             />
           </div>
         </header>
 
         {/* 3. Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
           <StatCard label="Нийт хүсэлт" value={projects.length} />
           <StatCard
             label="Хүлээгдэж буй"
@@ -296,29 +277,27 @@ export default function AdminDashboard() {
           />
           <StatCard
             label="Зөвшөөрсөн"
-            value={projects.filter((p) => p.status === "approved").length}
+            value={projects.filter((p) => p.status === "accepted").length}
+          />
+          <StatCard
+            label="Татгалзсан"
+            value={projects.filter((p) => p.status === "rejected").length}
           />
         </div>
 
         {/* 4. Filter Tabs */}
-        <div className="flex gap-2 mb-6 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit shadow-sm">
-          {["all", "pending", "approved", "rejected"].map((tab) => (
+        <div className="flex gap-2 mb-6 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit">
+          {["all", "pending", "reviewed", "accepted", "rejected"].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-wider ${
+              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all uppercase ${
                 filter === tab
                   ? "bg-blue-600 text-white shadow-lg"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  : "text-slate-500"
               }`}
             >
-              {tab === "all"
-                ? "Бүгд"
-                : tab === "pending"
-                  ? "Хүлээгдэж буй"
-                  : tab === "approved"
-                    ? "Зөвшөөрсөн"
-                    : "Татгалзсан"}
+              {tab === "all" ? "Бүгд" : tab}
             </button>
           ))}
         </div>
@@ -347,64 +326,75 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                <AnimatePresence mode="popLayout">
-                  {filteredProjects.map((project) => (
-                    <motion.tr
-                      key={project.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                {isProjectsLoading ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="text-center py-20 text-slate-400"
                     >
-                      <td className="px-6 py-4">
-                        <span className="font-bold dark:text-white block">
-                          {project.name}
-                        </span>
-                        <span className="text-[10px] text-slate-400 uppercase">
-                          {project.date}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">
-                        {project.founder}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-[11px] font-semibold dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                          {project.industry}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={project.status} />
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-1">
-                          {project.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  handleStatus(project.id, "approved")
-                                }
-                                className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-all"
-                              >
-                                <CheckCircle2 size={20} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleStatus(project.id, "rejected")
-                                }
-                                className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
-                              >
-                                <XCircle size={20} />
-                              </button>
-                            </>
-                          )}
-                          <button className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
-                            <Eye size={20} />
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
+                      Уншиж байна...
+                    </td>
+                  </tr>
+                ) : (
+                  <AnimatePresence mode="popLayout">
+                    {filteredProjects.map((project) => (
+                      <motion.tr
+                        key={project.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <span className="font-bold dark:text-white block">
+                            {project.startup_name}
+                          </span>
+                          <span className="text-[10px] text-slate-400 uppercase">
+                            {new Date(project.created_at).toLocaleDateString()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">
+                          {project.founder_name}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-[11px] font-semibold dark:text-slate-400">
+                            {project.industry}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <StatusBadge status={project.status} />
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-1">
+                            {project.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleUpdateStatus(project.id, "accepted")
+                                  }
+                                  className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg"
+                                >
+                                  <CheckCircle2 size={20} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleUpdateStatus(project.id, "rejected")
+                                  }
+                                  className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg"
+                                >
+                                  <XCircle size={20} />
+                                </button>
+                              </>
+                            )}
+                            <button className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                              <Eye size={20} />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                )}
               </tbody>
             </table>
           </div>
@@ -414,7 +404,7 @@ export default function AdminDashboard() {
   );
 }
 
-// --- Helper Components ---
+// --- Sub-components ---
 
 function NavItem({
   icon,
@@ -433,8 +423,7 @@ function NavItem({
           : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
       }`}
     >
-      {icon}
-      <span className="text-sm">{label}</span>
+      {icon} <span className="text-sm">{label}</span>
     </button>
   );
 }
@@ -451,13 +440,17 @@ function StatCard({ label, value }: { label: string; value: number }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const config = {
+  const config: any = {
     pending: {
       label: "Хүлээгдэж буй",
       style:
         "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-500",
     },
-    approved: {
+    reviewed: {
+      label: "Хянасан",
+      style: "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-500",
+    },
+    accepted: {
       label: "Зөвшөөрсөн",
       style:
         "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-500",
@@ -467,10 +460,10 @@ function StatusBadge({ status }: { status: string }) {
       style: "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-500",
     },
   };
-  const current = config[status as keyof typeof config] || config.pending;
+  const current = config[status] || config.pending;
   return (
     <span
-      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${current.style}`}
+      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${current.style}`}
     >
       {current.label}
     </span>
