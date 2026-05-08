@@ -41,8 +41,8 @@ export default function OrgRegistrationPage() {
   const [formData, setFormData] = useState({
     company_name: "",
     registration_number: "",
-    industry: "", // Үйл ажиллагааны чиглэл
-    investment_amount: "", // Хөрөнгө оруулалтын хэмжээ
+    focus_industry: "", // Үйл ажиллагааны чиглэл
+    investment_range: "", // Хөрөнгө оруулалтын хэмжээ
     website: "",
     representative_name: "",
     contact_email: "",
@@ -87,8 +87,8 @@ export default function OrgRegistrationPage() {
       if (
         !formData.company_name ||
         !formData.registration_number ||
-        !formData.industry ||
-        !formData.investment_amount
+        !formData.focus_industry ||
+        !formData.investment_range
       ) {
         setError(
           "Байгууллагын мэдээлэл болон хөрөнгө оруулалтын мэдээллийг бүрэн оруулна уу.",
@@ -133,8 +133,8 @@ export default function OrgRegistrationPage() {
     const data = new FormData();
     data.append("company_name", formData.company_name);
     data.append("registration_number", formData.registration_number);
-    data.append("industry", formData.industry);
-    data.append("investment_amount", formData.investment_amount);
+    data.append("focus_industry", formData.focus_industry);
+    data.append("investment_range", formData.investment_range);
     data.append("website", formData.website);
     data.append("representative_name", formData.representative_name);
     data.append("contact_email", formData.contact_email);
@@ -300,8 +300,8 @@ export default function OrgRegistrationPage() {
                             size={18}
                           />
                           <input
-                            name="industry"
-                            value={formData.industry}
+                            name="focus_industry"
+                            value={formData.focus_industry}
                             onChange={handleInputChange}
                             type="text"
                             placeholder="Жишээ нь: Мэдээллийн технологи, Худалдаа..."
@@ -320,8 +320,8 @@ export default function OrgRegistrationPage() {
                             size={18}
                           />
                           <input
-                            name="investment_amount"
-                            value={formData.investment_amount}
+                            name="investment_range"
+                            value={formData.investment_range}
                             onChange={handleInputChange}
                             type="number"
                             placeholder="Хөрөнгө оруулах боломжтой дүн"

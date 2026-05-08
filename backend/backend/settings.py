@@ -57,6 +57,7 @@ REST_FRAMEWORK = {
     ),
 }
 
+
 DJOSER = {
     "USER_ID_FIELD": "id",
     "LOGIN_FIELD": "username",                    # username-аар нэвтрэнэ

@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 # ===================================================================
@@ -187,7 +188,7 @@ class TeamMember(models.Model):
 # ===================================================================
 
 class Investor(models.Model):
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         CustomUser,
         on_delete=models.CASCADE,
         related_name="investor_profile"
@@ -448,3 +449,31 @@ class StartupRequest(models.Model):
     class Meta:
         verbose_name = "Стартап хүсэлт"
         verbose_name_plural = "Стартап хүсэлтүүд"
+
+
+##################chat##############################
+# models.py (нэмэх/солих хэсэг)
+
+class ChatRoom(models.Model):
+    startup = models.ForeignKey(Startup, on_delete=models.CASCADE, related_name="chat_rooms")
+    investor = models.ForeignKey(Investor, on_delete=models.CASCADE, related_name="chat_rooms")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('startup', 'investor') # Нэг стартап, нэг хөрөнгө оруулагч хоёрын дунд зөвхөн 1 өрөө байна
+
+    def __str__(self):
+        return f"Chat: {self.startup.startup_name} & {self.investor.company_name}"
+
+class Message(models.Model):
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    text = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at'] # Мессежүүд хугацааны дарааллаар харагдана
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.text[:20]}"

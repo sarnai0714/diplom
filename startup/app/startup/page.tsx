@@ -2,18 +2,17 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation"; // Хуудас шилжүүлэхэд хэрэгтэй
+import { motion } from "framer-motion";
 import {
-  Search,
-  Filter,
-  ArrowUpRight,
   TrendingUp,
-  Wallet,
+  ArrowUpRight,
   Heart,
   Loader2,
+  MessageCircle,
 } from "lucide-react";
 
-// Typescript ашиглаж байгаа тул датаны бүтцийг тодорхойлно
+// Интерфэйсүүд
 interface Startup {
   id: number;
   startup_name: string;
@@ -32,10 +31,10 @@ interface PageContent {
   page_name: string;
   content_key: string;
   text_content: string;
-  updated_at: string;
 }
 
 export default function InvestPage() {
+  const router = useRouter();
   const [startups, setStartups] = useState<Startup[]>([]);
   const [contents, setContents] = useState<PageContent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,21 +42,27 @@ export default function InvestPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIndustry, setSelectedIndustry] = useState("");
 
-  // --- API-аас дата татах хэсэг ---
+  const API_BASE = "http://127.0.0.1:8000/api";
+
+  // --- 1. Дата татах ---
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://127.0.0.1:8000/api/projects/");
-        const data = await response.json();
+        const [projRes, contRes] = await Promise.all([
+          fetch(`${API_BASE}/projects/`),
+          fetch(`${API_BASE}/contents/`),
+        ]);
 
-        // Дата ирэх формат нь Array мөн эсэхийг шалгаад онооно
-        if (Array.isArray(data)) {
-          setStartups(data);
-        } else if (data.results && Array.isArray(data.results)) {
-          // Хэрэв Django Pagination ашиглаж байгаа бол дата 'results' дотор ирдэг
-          setStartups(data.results);
-        }
+        const projData = await projRes.json();
+        const contData = await contRes.json();
+
+        setStartups(
+          Array.isArray(projData) ? projData : projData.results || [],
+        );
+        setContents(
+          Array.isArray(contData) ? contData : contData.results || [],
+        );
       } catch (error) {
         console.error("API Error:", error);
       } finally {
@@ -67,261 +72,228 @@ export default function InvestPage() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("http://127.0.0.1:8000/api/contents/");
-        const data = await response.json();
-
-        // Дата ирэх формат нь Array мөн эсэхийг шалгаад онооно
-        if (Array.isArray(data)) {
-          setContents(data);
-        } else if (data.results && Array.isArray(data.results)) {
-          // Хэрэв Django Pagination ашиглаж байгаа бол дата 'results' дотор ирдэг
-          setContents(data.results);
-        }
-      } catch (error) {
-        console.error("API Error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
+  // --- 2. Салбаруудыг шүүж авах ---
   const industries = useMemo(() => {
     return Array.from(new Set(startups.map((s) => s.industry)));
   }, [startups]);
-  //-------------------------------
-  // WISHLIST POST
-  // -------------------------------
-  const toggleWishlist = async (startupId: number) => {
+
+  // --- 3. Чат үүсгэх функц ---
+  const handleStartChat = async (startupId: number) => {
     try {
       const token = localStorage.getItem("access");
-      const response = await fetch("http://127.0.0.1:8000/api/wishlist/", {
+      if (!token) {
+        alert("Та нэвтрэх шаардлагатай.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/rooms/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          startup: startupId,
-        }),
+        body: JSON.stringify({ startup: startupId }), // Энд "startup" гэдэг түлхүүр үг Backend Serializer-тэй ижил байх ёстой
       });
 
-      const data = await response.json();
+      const data = await response.json(); // Эхлээд JSON-оо уншина
 
       if (response.ok) {
-        setWishlist((prev) => [...prev, startupId]);
+        // Амжилттай болсон бол чат руу шилжинэ
+        router.push("/chat");
       } else {
-        console.log(data);
-        alert(data.non_field_errors?.[0] || "Алдаа гарлаа");
+        // 400 алдаа гарвал энд яг ямар талбар алдаатай байгааг харуулна
+        console.error("Серверээс ирсэн алдаа:", data);
+
+        // Жишээ нь: { "startup": ["This field is required."] } гэж ирвэл
+        const errorMsg = JSON.stringify(data);
+        alert(`Алдаа (${response.status}): ${errorMsg}`);
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Сервертэй холбогдоход алдаа гарлаа.");
+    }
+  };
+
+  // --- 4. Wishlist функц ---
+  const toggleWishlist = async (startupId: number) => {
+    try {
+      const token = localStorage.getItem("access");
+      const response = await fetch(`${API_BASE}/wishlist/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ startup: startupId }),
+      });
+
+      if (response.ok) {
+        setWishlist((prev) =>
+          prev.includes(startupId)
+            ? prev.filter((id) => id !== startupId)
+            : [...prev, startupId],
+        );
       }
     } catch (error) {
       console.log(error);
     }
   };
 
-  // Тухайн хуудсанд хамааралтай контентыг шүүж авах туслах функц
   const getContent = (key: string, defaultValue: string) => {
     const item = contents.find((c) => c.content_key === key);
     return item ? item.text_content : defaultValue;
   };
 
-  // Хайлт хийх логик (Client-side filtering)
   const filteredStartups = startups.filter((s) => {
-    const matchesSearch =
-      s.startup_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.industry.toLowerCase().includes(searchTerm.toLowerCase());
-
+    const matchesSearch = s.startup_name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
     const matchesIndustry =
       selectedIndustry === "" || s.industry === selectedIndustry;
-
     return matchesSearch && matchesIndustry;
   });
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#020617] transition-colors duration-500 font-sans selection:bg-blue-500/30">
-      {/* Background Decor */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[5%] left-[5%] w-[30%] h-[30%] bg-indigo-500/10 rounded-full blur-[100px]" />
-      </div>
-
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] transition-colors duration-500 font-sans">
       <div className="relative max-w-7xl mx-auto px-6 py-20">
-        {/* --- 1. Header Section --- */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-2 gap-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-blue-500/10 text-slate-900 dark:text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 border border-slate-200 dark:border-blue-500/20">
-              <TrendingUp size={14} className="text-blue-600" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-blue-500/10 text-blue-600 text-[10px] font-black uppercase tracking-widest mb-4 border border-blue-500/20">
+              <TrendingUp size={14} />
               <span>Хөрөнгө оруулалт</span>
             </div>
-
             <h1
-              className="text-5xl md:text-6xl font-black tracking-tight dark:text-white whitespace-pre-line"
+              className="text-5xl md:text-6xl font-black tracking-tight dark:text-white"
               dangerouslySetInnerHTML={{
-                __html:
-                  getContent("startup_title", "Ирээдүйг <br /> эндээс ол.") ||
-                  "",
+                __html: getContent("startup_title", "Ирээдүйг эндээс ол."),
               }}
             />
           </motion.div>
 
-          {/* --- 2. Filters & Search --- */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col lg:flex-row gap-4 mb-16 p-2 bg-slate-100/50 dark:bg-slate-900/30 rounded-[2.5rem] backdrop-blur-md"
-          >
-            <div className="flex gap-2">
-              <select
-                value={selectedIndustry}
-                onChange={(e) => setSelectedIndustry(e.target.value)}
-                className="px-8 py-5 rounded-[2rem] bg-white dark:bg-slate-900 ..."
-              >
-                <option value="">Бүх салбар</option>
-
-                {industries.map((industry) => (
-                  <option key={industry} value={industry}>
-                    {industry}
-                  </option>
-                ))}
-              </select>
-              {/* <button className="px-8 py-5 rounded-[2rem] bg-slate-900 dark:bg-blue-600 text-white flex items-center gap-3 hover:shadow-xl hover:shadow-blue-500/20 transition-all active:scale-95">
-                <Filter size={18} />
-                <span className="font-bold">Шүүлтүүр</span>
-              </button> */}
-            </div>
-          </motion.div>
+          {/* Search & Filter */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <select
+              value={selectedIndustry}
+              onChange={(e) => setSelectedIndustry(e.target.value)}
+              className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Бүх салбар</option>
+              {industries.map((ind) => (
+                <option key={ind} value={ind}>
+                  {ind}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Төсөл хайх..."
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-blue-500 min-w-[250px]"
+            />
+          </div>
         </div>
 
-        {/* --- 3. Startup Cards Grid (Data Rendering) --- */}
+        {/* Startup Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
-            <Loader2 className="animate-spin text-blue-600" size={48} />
+          <div className="flex flex-col items-center py-20">
+            <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
             <p className="text-slate-500 font-bold">
               Төслүүдийг ачаалж байна...
             </p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {filteredStartups.map((s, idx) => {
-              const percent = Math.min(
-                Math.round((s.raised_amount / s.fund_amount) * 100),
-                100,
-              );
-              const isWishlisted = wishlist.includes(s.id);
-
-              return (
-                <motion.div
-                  key={s.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="group relative bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800/50 overflow-hidden shadow-xl shadow-slate-200/60 dark:shadow-none hover:border-blue-500/30 transition-all duration-500"
-                >
-                  {/* Image Section */}
-                  <div className="relative h-64 overflow-hidden">
-                    <img
-                      src={
-                        s.image_url ||
-                        "https://images.unsplash.com/photo-1551288049-bebda4e38f71"
-                      }
-                      alt={s.startup_name}
-                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                    <div className="absolute top-6 left-6">
-                      <span className="px-4 py-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-[10px] font-black text-white uppercase tracking-widest">
-                        {s.industry}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => toggleWishlist(s.id)}
-                      className={`absolute top-6 right-6 p-3 rounded-2xl backdrop-blur-xl transition-all duration-300 ${
-                        isWishlisted
-                          ? "bg-red-500 text-white"
-                          : "bg-white/10 text-white border border-white/20 hover:bg-white/20"
-                      }`}
-                    >
-                      <Heart
-                        size={20}
-                        fill={isWishlisted ? "currentColor" : "none"}
-                      />
-                    </button>
+            {filteredStartups.map((s, idx) => (
+              <motion.div
+                key={s.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="group relative bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800/50 overflow-hidden shadow-xl hover:border-blue-500/30 transition-all duration-500"
+              >
+                {/* Image */}
+                <div className="relative h-64 overflow-hidden">
+                  <img
+                    src={
+                      s.image_url ||
+                      "https://images.unsplash.com/photo-1551288049-bebda4e38f71"
+                    }
+                    alt={s.startup_name}
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                  />
+                  <div className="absolute top-6 left-6 px-4 py-2 bg-black/40 backdrop-blur-md rounded-xl text-[10px] font-black text-white uppercase">
+                    {s.industry}
                   </div>
 
-                  {/* Content Section */}
-                  <div className="p-10">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h3 className="text-3xl font-black tracking-tight dark:text-white mb-2">
-                          {s.startup_name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-tighter">
-                          <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                          {s.stage} Round
-                        </div>
-                      </div>
-                      <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 group-hover:rotate-45">
-                        <ArrowUpRight size={22} />
-                      </div>
+                  <button
+                    onClick={() => toggleWishlist(s.id)}
+                    className={`absolute top-6 right-6 p-3 rounded-2xl backdrop-blur-md transition-all ${
+                      wishlist.includes(s.id)
+                        ? "bg-red-500 text-white"
+                        : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+                    }`}
+                  >
+                    <Heart
+                      size={20}
+                      fill={wishlist.includes(s.id) ? "currentColor" : "none"}
+                    />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-10">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-3xl font-black dark:text-white mb-1">
+                        {s.startup_name}
+                      </h3>
+                      <p className="text-blue-600 font-bold text-xs uppercase tracking-tighter">
+                        {s.stage} Round
+                      </p>
                     </div>
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all group-hover:rotate-45">
+                      <ArrowUpRight size={22} />
+                    </div>
+                  </div>
 
-                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-10 line-clamp-2 font-medium">
-                      {s.description}
-                    </p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-10 line-clamp-2">
+                    {s.description}
+                  </p>
 
+                  {/* Buttons */}
+                  <div className="flex gap-2">
                     <Link
                       href={`/startup/${s.id}`}
-                      className="group/btn relative flex items-center justify-center w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-5 rounded-[1.5rem] font-black text-sm overflow-hidden transition-all hover:shadow-2xl hover:shadow-blue-500/20 active:scale-95"
+                      className="group/btn relative flex-[4] flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-5 rounded-[1.5rem] font-black text-sm overflow-hidden transition-all active:scale-95"
                     >
                       <span className="relative z-10">ТӨСӨЛТЭЙ ТАНИЛЦАХ</span>
                       <div className="absolute inset-0 bg-blue-600 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
                     </Link>
+
+                    <button
+                      onClick={() => handleStartChat(s.id)}
+                      className="group/btn relative flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white py-5 rounded-[1.5rem] transition-all hover:text-white active:scale-95 border border-slate-200 dark:border-slate-700 overflow-hidden"
+                    >
+                      <MessageCircle size={22} className="relative z-10" />
+                      <div className="absolute inset-0 bg-blue-600 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                    </button>
                   </div>
-                </motion.div>
-              );
-            })}
+                </div>
+              </motion.div>
+            ))}
           </div>
         )}
 
         {/* Empty State */}
         {!loading && filteredStartups.length === 0 && (
           <div className="text-center py-20 text-slate-500 font-bold">
-            Ийм нэртэй төсөл олдсонгүй.
+            Ийм төсөл олдсонгүй.
           </div>
         )}
-
-        {/* --- 4. Footer Banner --- */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          className="mt-32 p-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 rounded-[3rem]"
-        >
-          <div className="bg-white dark:bg-slate-950 rounded-[2.9rem] p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="text-center md:text-left">
-              <h2 className="text-3xl font-black dark:text-white mb-2">
-                Өөрийн стартапыг бүртгүүлэх үү?
-              </h2>
-              <p className="text-slate-500 font-medium">
-                Дэлхийн хэмжээний хөрөнгө оруулагчидтай холбогдох боломж.
-              </p>
-            </div>
-            <button className="px-10 py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black hover:scale-105 transition-transform">
-              АНКЕТ ИЛГЭЭХ
-            </button>
-          </div>
-        </motion.div>
       </div>
     </div>
   );

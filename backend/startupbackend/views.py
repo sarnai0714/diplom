@@ -1,14 +1,15 @@
+import anthropic
 from .models import *
 from rest_framework import generics,viewsets,permissions,status,serializers,parsers
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .serializers import CustomUserCreateSerializer,ProjectSerializer,InvestorSerializer,WishlistSerializer,StartupGrowthSerializer,SiteContentSerializer,TeamMemberSerializer
-from .serializers import StartupRequestSerializer
+from .serializers import StartupRequestSerializer,InvestmentSerializer,MessageSerializer,ChatRoomSerializer
 from django.contrib.auth import get_user_model
-from .permissions import IsStartup,IsAdmin
+from .permissions import IsStartup,IsAdmin,IsInvestor
 from django.db import transaction
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied,ValidationError
 from django.http import JsonResponse
 from django.core.files.storage import default_storage
 from django.views.decorators.csrf import csrf_exempt
@@ -16,8 +17,10 @@ from rest_framework.decorators import action, api_view,permission_classes
 from django.db.models import Count, Sum  # <--- Үүнийг нэм
 import datetime
 from django.utils.timezone import now
+from django.conf import settings
+from rest_framework.views import APIView
 from django.db.models.functions import TruncMonth
-
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -129,8 +132,14 @@ class RegisterView(generics.CreateAPIView):
         )
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Startup.objects.all()
     serializer_class = ProjectSerializer
+
+    def get_queryset(self):
+        # Үндсэн list API дээр зөвхөн approved startup
+        if self.action == "list":
+            return Startup.objects.filter(status="accepted")
+
+        return Startup.objects.all()
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -139,7 +148,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             permission_classes = [IsStartup]
         else:
             permission_classes = [permissions.IsAuthenticated]
-        
+
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
@@ -154,28 +163,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
             "message": "Таны стартап бүртгүүлэх хүсэлт амжилттай илгээгдлээ.",
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
-    
+
     @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAdminUser])
     def update_status(self, request, pk=None):
-        """
-        Стартапын төлөвийг шинэчлэх (Зөвхөн админ)
-        Body: {"status": "accepted"}
-        """
         startup = self.get_object()
         new_status = request.data.get('status')
-        
-        # Зөвшөөрөгдсөн төлөвүүд эсэхийг шалгах
+
         valid_statuses = [choice[0] for choice in Startup.STATUS_CHOICES]
-        
+
         if new_status not in valid_statuses:
             return Response(
-                {"error": f"Буруу төлөв. Дараах утгуудын аль нэгийг илгээнэ үү: {', '.join(valid_statuses)}"},
+                {
+                    "error": f"Буруу төлөв. Дараах утгуудын аль нэгийг илгээнэ үү: {', '.join(valid_statuses)}"
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         startup.status = new_status
         startup.save()
-        
+
         return Response({
             "message": f"Стартапын төлөв амжилттай '{new_status}' болж өөрчлөгдлөө.",
             "status": startup.status
@@ -225,6 +231,22 @@ class InvestorViewSet(viewsets.ModelViewSet):
 
             serializer.save(user=user)
 
+class InvestmentViewSet(viewsets.ModelViewSet):
+    queryset = Investment.objects.all().order_by('-created_at')
+    serializer_class = InvestmentSerializer
+    permission_classes = [IsInvestor]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Investment.objects.filter(investor__user=user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        try:
+            investor_profile = self.request.user.investor_profile
+        except Investor.DoesNotExist:
+            raise ValidationError("Танд хөрөнгө оруулагчийн профиль алга.")
+
+        serializer.save(investor=investor_profile)
 class WishlistViewSet(viewsets.ModelViewSet):
     serializer_class = WishlistSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -350,3 +372,47 @@ class StartupRequestViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_201_CREATED,
         )
+    
+
+class ChatRoomViewSet(viewsets.ModelViewSet):
+    serializer_class = ChatRoomSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Модел дээр investor нь Investor модел учраас investor__user гэж шүүнэ
+        return ChatRoom.objects.filter(
+            Q(startup__user=user) | Q(investor__user=user)
+        )
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        if user.role != 'investor':
+            raise PermissionDenied("Зөвхөн investor room үүсгэнэ")
+
+        try:
+            investor = user.investor_profile
+        except Investor.DoesNotExist:
+            raise ValidationError("Investor profile олдсонгүй")
+
+        serializer.save(investor=investor)
+
+class MessageViewSet(viewsets.ModelViewSet):
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Зөвхөн тухайн өрөөний (room_id) мессежүүдийг авах
+        room_id = self.request.query_params.get('room')
+        if room_id:
+            return Message.objects.filter(room_id=room_id)
+        return Message.objects.none()
+
+    def perform_create(self, serializer):
+        room_id = self.request.data.get('room')
+        room = ChatRoom.objects.get(id=room_id)
+        # Мессеж илгээгчийг одоогийн хэрэглэгчээр тохируулах
+        serializer.save(sender=self.request.user, room=room)
+    
+    

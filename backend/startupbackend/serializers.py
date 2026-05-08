@@ -89,6 +89,20 @@ class InvestorSerializer(serializers.ModelSerializer):
         # validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
     
+
+class InvestmentSerializer(serializers.ModelSerializer):
+    # Уншихад хялбар болгох үүднээс нэмэлт талбаруудыг харуулж болно
+    startup_details = ProjectSerializer(source='startup', read_only=True)
+    investor_name = serializers.ReadOnlyField(source='investor.company_name')
+
+    def __init__(self, *args, **kwargs):
+        super(InvestmentSerializer, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Investment
+        fields = '__all__'
+        read_only_fields = ['status', 'created_at','investor'] #
+    
 class WishlistSerializer(serializers.ModelSerializer):
     startup_details = ProjectSerializer(source='startup', read_only=True)
     class Meta:
@@ -135,3 +149,27 @@ class StartupRequestSerializer(serializers.ModelSerializer):
             validated_data['startup_name'] = startup_obj.startup_name
         
         return super().create(validated_data)
+    
+class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.ReadOnlyField(source='sender.username')
+
+    class Meta:
+        model = Message
+        fields = ['id', 'room', 'sender', 'sender_name', 'text', 'is_read', 'created_at']
+        read_only_fields = ['sender', 'room']
+
+class ChatRoomSerializer(serializers.ModelSerializer):
+    startup_name = serializers.ReadOnlyField(source='startup.startup_name')
+    investor_name = serializers.ReadOnlyField(source='investor.company_name')
+    last_message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatRoom
+        fields = '__all__'
+        read_only_fields = ['investor']
+
+    def get_last_message(self, obj):
+        last_msg = obj.messages.last()
+        if last_msg:
+            return MessageSerializer(last_msg).data
+        return None

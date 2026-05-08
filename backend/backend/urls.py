@@ -21,17 +21,28 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from startupbackend.views import RegisterView,ProjectViewSet,InvestorViewSet,WishlistViewSet,StartupGrowthViewSet,SiteContentViewSet,TeamMemberViewSet,StartupRequestViewSet,MyStartupViewSet
+from startupbackend.views import InvestmentViewSet,ChatRoomViewSet,MessageViewSet
 from startupbackend.views import startup_stats,user_growth
+
+# startupbackend/urls.py
 
 router = routers.DefaultRouter()
 router.register(r'projects', ProjectViewSet, basename='projects')
 router.register(r'investors', InvestorViewSet, basename='investors')
 router.register(r'wishlist', WishlistViewSet, basename='wishlist')
-router.register(r'startup-growth', StartupGrowthViewSet)
-router.register(r'contents', SiteContentViewSet)
-router.register(r'team-members', TeamMemberViewSet)
-router.register(r"startup-requests", StartupRequestViewSet)
+
+# Queryset-гүй эсвэл динамик шүүлтүүртэй бүх ViewSet-д basename нэмэх:
+router.register(r'startup-growth', StartupGrowthViewSet, basename='startup-growth')
+router.register(r'contents', SiteContentViewSet, basename='contents')
+router.register(r'team-members', TeamMemberViewSet, basename='team-members')
+router.register(r"startup-requests", StartupRequestViewSet, basename='startup-requests')
 router.register(r'my-projects', MyStartupViewSet, basename='my-startup')
+
+# Энэ мөр өмнө нь алдаа зааж байсан хэсэг:
+router.register(r'investments', InvestmentViewSet, basename='investment')
+
+router.register(r'rooms', ChatRoomViewSet, basename='chatmessage')
+router.register(r'messages', MessageViewSet, basename='message')
 
 
 urlpatterns = [
@@ -45,6 +56,7 @@ urlpatterns = [
 
     path('projects/stats/', startup_stats, name='project-stats'),
     path('projects/user-growth/', user_growth),
+
 
     path('api/', include(router.urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

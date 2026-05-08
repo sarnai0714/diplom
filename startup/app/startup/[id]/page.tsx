@@ -36,6 +36,7 @@ interface Startup {
   fund_amount: number;
   raised_amount: number;
   image_url: string;
+  email: string; // нэмнэ
   team_members: TeamMember[];
 }
 
@@ -267,9 +268,19 @@ export default function StartupDetailPage() {
               )}
 
               {/* BUTTON */}
-              <button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-slate-200 dark:shadow-none">
-                <Mail size={20} /> Холбоо барих
-              </button>
+              <a
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${startup.email}&su=${encodeURIComponent(
+                  `${startup.startup_name} төсөлтэй холбоотой`,
+                )}&body=${encodeURIComponent(
+                  "Сайн байна уу,\n\nХөрөнгө оруулалтын талаар холбогдож байна.",
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-slate-200 dark:shadow-none"
+              >
+                <Mail size={20} />
+                Холбоо барих
+              </a>
 
               {/* VERIFIED */}
               <div className="mt-6 flex justify-center items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
