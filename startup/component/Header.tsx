@@ -104,9 +104,6 @@ export default function Header() {
           <Link href="/report" className="hover:text-blue-600 transition">
             Үзүүлэлт
           </Link>
-          <Link href="/about" className="hover:text-blue-600 transition">
-            Бидний тухай
-          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -173,10 +170,16 @@ export default function Header() {
                       Миний мэдээлэл
                     </Link>
                     <Link
-                      href="/whishlist"
+                      href="/wishlist"
                       className="block px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition dark:text-slate-200"
                     >
                       Хадгалсан төсөл
+                    </Link>
+                    <Link
+                      href="/chat"
+                      className="block px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition dark:text-slate-200"
+                    >
+                      Зурвас
                     </Link>
                     <hr className="my-1 border-slate-100 dark:border-slate-800" />
                     <button

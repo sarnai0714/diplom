@@ -76,12 +76,12 @@ const SavedProjectsPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#020617] text-slate-900 dark:text-white transition-colors duration-500 font-sans">
-      <div className="max-w-6xl mx-auto mt-10">
+    <div className="min-h-screen bg-[#f8f8f8] dark:bg-[#020617] transition-colors duration-300 p-10">
+      <div className="max-w-6xl mx-auto">
         {/* Header (UNCHANGED) */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+            <h1 className="text-3xl font-black italic text-[#1d2240] dark:text-white flex items-center gap-2">
               <Bookmark className="text-blue-600" /> Миний хадгалсан төслүүд
             </h1>
 

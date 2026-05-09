@@ -368,12 +368,12 @@ export default function InvestorsSection() {
             >
               <TrendingUp size={14} /> Хөрөнгө оруулагч
             </motion.div>
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">
+            <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">
               Итгэмжлэгдсэн{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">
                 хөрөнгө оруулагчид
               </span>
-            </h2>
+            </h1>
             <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
               Монголын стартап экосистемийг дэмжигч шилдэг венчур капитал болон
               анжел хөрөнгө оруулагчидтай шууд холбогд.

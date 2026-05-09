@@ -21,7 +21,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from startupbackend.views import RegisterView,ProjectViewSet,InvestorViewSet,WishlistViewSet,StartupGrowthViewSet,SiteContentViewSet,TeamMemberViewSet,StartupRequestViewSet,MyStartupViewSet
-from startupbackend.views import InvestmentViewSet,ChatRoomViewSet,MessageViewSet
+from startupbackend.views import InvestmentViewSet,ChatRoomViewSet,MessageViewSet,ProfileView,ChangePasswordView
 from startupbackend.views import startup_stats,user_growth
 
 # startupbackend/urls.py
@@ -57,6 +57,8 @@ urlpatterns = [
     path('projects/stats/', startup_stats, name='project-stats'),
     path('projects/user-growth/', user_growth),
 
+    path("profile", ProfileView.as_view()),
+    path("change-password", ChangePasswordView.as_view()),
 
     path('api/', include(router.urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .serializers import CustomUserCreateSerializer,ProjectSerializer,InvestorSerializer,WishlistSerializer,StartupGrowthSerializer,SiteContentSerializer,TeamMemberSerializer
-from .serializers import StartupRequestSerializer,InvestmentSerializer,MessageSerializer,ChatRoomSerializer
+from .serializers import StartupRequestSerializer,InvestmentSerializer,MessageSerializer,ChatRoomSerializer,CustomUserSerializer
 from django.contrib.auth import get_user_model
 from .permissions import IsStartup,IsAdmin,IsInvestor
 from django.db import transaction
@@ -130,16 +130,67 @@ class RegisterView(generics.CreateAPIView):
             },
             status=status.HTTP_201_CREATED
         )
+    
+class ProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    # profile авах
+    def get(self, request):
+        serializer = CustomUserSerializer(request.user)
+        return Response(serializer.data)
+
+    # profile update
+    def put(self, request):
+
+        serializer = CustomUserSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+
+        old_password = request.data.get("old_password")
+        new_password = request.data.get("new_password")
+
+        if not user.check_password(old_password):
+            return Response(
+                {"error": "Хуучин нууц үг буруу байна"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"message": "Нууц үг амжилттай солигдлоо"})
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
 
     def get_queryset(self):
-        # Үндсэн list API дээр зөвхөн approved startup
-        if self.action == "list":
-            return Startup.objects.filter(status="accepted")
+        user = self.request.user
+        
+        # 1. Хэрэв хэрэглэгч нэвтэрсэн бөгөөд 'admin' role-той бол
+        # Админ самбарт зориулж бүх датаг (pending, accepted, rejected) харуулна.
+        if user.is_authenticated and hasattr(user, 'role') and user.role == 'admin':
+            return Startup.objects.all()
 
-        return Startup.objects.all()
+        # 2. Бусад бүх тохиолдолд (Зочин эсвэл Жирийн хэрэглэгч)
+        # Зөвхөн баталгаажсан 'accepted' төслүүдийг харуулна.
+        return Startup.objects.filter(status="accepted")
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -234,11 +285,10 @@ class InvestorViewSet(viewsets.ModelViewSet):
 class InvestmentViewSet(viewsets.ModelViewSet):
     queryset = Investment.objects.all().order_by('-created_at')
     serializer_class = InvestmentSerializer
-    permission_classes = [IsInvestor]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
-        return Investment.objects.filter(investor__user=user).order_by('-created_at')
+        return Investment.objects.all().order_by('-created_at')
 
     def perform_create(self, serializer):
         try:
