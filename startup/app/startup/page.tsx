@@ -39,7 +39,6 @@ export default function InvestPage() {
   const [contents, setContents] = useState<PageContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState<number[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedIndustry, setSelectedIndustry] = useState("");
   const [minFund, setMinFund] = useState("");
   const [maxFund, setMaxFund] = useState("");
@@ -53,10 +52,6 @@ export default function InvestPage() {
         setLoading(true);
 
         const params = new URLSearchParams();
-
-        if (searchTerm.trim()) {
-          params.append("search", searchTerm);
-        }
 
         if (selectedIndustry) {
           params.append("industry", selectedIndustry);
@@ -99,10 +94,6 @@ export default function InvestPage() {
 
   const filteredStartups = useMemo(() => {
     return startups.filter((s) => {
-      const matchSearch = s.startup_name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
       const matchIndustry = selectedIndustry
         ? s.industry === selectedIndustry
         : true;
@@ -110,9 +101,9 @@ export default function InvestPage() {
       const matchMin = minFund ? s.fund_amount >= Number(minFund) : true;
       const matchMax = maxFund ? s.fund_amount <= Number(maxFund) : true;
 
-      return matchSearch && matchIndustry && matchMin && matchMax;
+      return matchIndustry && matchMin && matchMax;
     });
-  }, [startups, searchTerm, selectedIndustry, minFund, maxFund]);
+  }, [startups, selectedIndustry, minFund, maxFund]);
 
   // --- 3. Чат үүсгэх функц ---
   const handleStartChat = async (startupId: number) => {
