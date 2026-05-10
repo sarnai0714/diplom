@@ -54,7 +54,7 @@ const FundedStartups = () => {
 
   return (
     /* Background: Light үед цагаан, Dark үед хар */
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white p-8 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white p-8 font-sans transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
         {/* Толгой */}
         <div className="mb-12">
@@ -137,8 +137,8 @@ const FundedStartups = () => {
                     <span className="text-xs text-slate-500 dark:text-gray-500 block mb-2 font-medium">
                       Хөрөнгө оруулагч:
                     </span>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="text-[10px] bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded text-slate-700 dark:text-gray-300">
+                    <div className="flex flex-wrap gap-3">
+                      <span className="text-xs bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3 py-1 rounded-md text-slate-700 dark:text-gray-300 font-medium">
                         {item.investor_name}
                       </span>
                     </div>

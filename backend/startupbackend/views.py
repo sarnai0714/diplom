@@ -182,16 +182,45 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        
-        # 1. Хэрэв хэрэглэгч нэвтэрсэн бөгөөд 'admin' role-той бол
-        # Админ самбарт зориулж бүх датаг (pending, accepted, rejected) харуулна.
-        if user.is_authenticated and hasattr(user, 'role') and user.role == 'admin':
-            return Startup.objects.all()
+        queryset = Startup.objects.all()
 
-        # 2. Бусад бүх тохиолдолд (Зочин эсвэл Жирийн хэрэглэгч)
-        # Зөвхөн баталгаажсан 'accepted' төслүүдийг харуулна.
-        return Startup.objects.filter(status="accepted")
+        # ----------------------------
+        # 1. ROLE FILTER (existing logic)
+        # ----------------------------
+        if not (user.is_authenticated and hasattr(user, 'role') and user.role == 'admin'):
+            queryset = queryset.filter(status="accepted")
 
+        # ----------------------------
+        # 2. QUERY PARAM FILTERS
+        # ----------------------------
+        search = self.request.query_params.get("search")
+        industry = self.request.query_params.get("industry")
+        min_fund = self.request.query_params.get("min_fund")
+        max_fund = self.request.query_params.get("max_fund")
+
+        # Search (startup name + description)
+        if search:
+            queryset = queryset.filter(
+                Q(startup_name__icontains=search) |
+                Q(description__icontains=search)
+            )
+
+        # Industry filter
+        if industry:
+            queryset = queryset.filter(industry=industry)
+
+        # Fund range filter
+        if min_fund:
+            queryset = queryset.filter(fund_amount__gte=min_fund)
+
+        if max_fund:
+            queryset = queryset.filter(fund_amount__lte=max_fund)
+
+        return queryset
+
+    # ----------------------------
+    # PERMISSIONS (unchanged)
+    # ----------------------------
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             permission_classes = [permissions.AllowAny]
@@ -202,6 +231,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return [permission() for permission in permission_classes]
 
+    # ----------------------------
+    # CREATE (unchanged)
+    # ----------------------------
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -215,6 +247,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
 
+    # ----------------------------
+    # STATUS UPDATE (unchanged)
+    # ----------------------------
     @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAdminUser])
     def update_status(self, request, pk=None):
         startup = self.get_object()
@@ -225,7 +260,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if new_status not in valid_statuses:
             return Response(
                 {
-                    "error": f"Буруу төлөв. Дараах утгуудын аль нэгийг илгээнэ үү: {', '.join(valid_statuses)}"
+                    "error": f"Буруу төлөв. Дараах утгууд: {', '.join(valid_statuses)}"
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -234,10 +269,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         startup.save()
 
         return Response({
-            "message": f"Стартапын төлөв амжилттай '{new_status}' болж өөрчлөгдлөө.",
+            "message": f"Төлөв '{new_status}' болж өөрчлөгдлөө.",
             "status": startup.status
         })
-
 class MyStartupViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticated]

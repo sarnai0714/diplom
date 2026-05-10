@@ -3,7 +3,7 @@
 import {
   User,
   Heart,
-  ShoppingCart,
+  Wallet,
   CircleHelp,
   Gift,
   MapPin,
@@ -11,13 +11,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState} from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function ProfileLayout({
+  
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const menu = [
     {
@@ -31,9 +36,9 @@ export default function ProfileLayout({
       icon: <Heart size={18} />,
     },
     {
-      label: "Миний захиалга",
-      href: "/profile/orders",
-      icon: <ShoppingCart size={18} />,
+      label: "Хөрөнгө оруулалт",
+      href: "/fund",
+      icon: <Wallet size={18} />,
     },
   ];
 
@@ -64,7 +69,12 @@ export default function ProfileLayout({
             })}
 
             {/* Logout */}
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-full hover:bg-white transition text-red-500 mt-4">
+            <button
+            onClick={() => {
+                        logout();
+                        setMenuOpen(false);
+                      }}
+                 className="w-full flex items-center gap-3 px-4 py-3 rounded-full hover:bg-white transition text-red-500 mt-4">
               <LogOut size={18} />
               Гарах
             </button>

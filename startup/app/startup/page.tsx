@@ -41,6 +41,8 @@ export default function InvestPage() {
   const [wishlist, setWishlist] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIndustry, setSelectedIndustry] = useState("");
+  const [minFund, setMinFund] = useState("");
+  const [maxFund, setMaxFund] = useState("");
 
   const API_BASE = "http://127.0.0.1:8000/api";
 
@@ -49,6 +51,24 @@ export default function InvestPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+
+        const params = new URLSearchParams();
+
+        if (searchTerm.trim()) {
+          params.append("search", searchTerm);
+        }
+
+        if (selectedIndustry) {
+          params.append("industry", selectedIndustry);
+        }
+
+        if (minFund) {
+          params.append("min_fund", minFund);
+        }
+
+        if (maxFund) {
+          params.append("max_fund", maxFund);
+        }
         const [projRes, contRes] = await Promise.all([
           fetch(`${API_BASE}/projects/`),
           fetch(`${API_BASE}/contents/`),
@@ -76,6 +96,23 @@ export default function InvestPage() {
   const industries = useMemo(() => {
     return Array.from(new Set(startups.map((s) => s.industry)));
   }, [startups]);
+
+  const filteredStartups = useMemo(() => {
+    return startups.filter((s) => {
+      const matchSearch = s.startup_name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      const matchIndustry = selectedIndustry
+        ? s.industry === selectedIndustry
+        : true;
+
+      const matchMin = minFund ? s.fund_amount >= Number(minFund) : true;
+      const matchMax = maxFund ? s.fund_amount <= Number(maxFund) : true;
+
+      return matchSearch && matchIndustry && matchMin && matchMax;
+    });
+  }, [startups, searchTerm, selectedIndustry, minFund, maxFund]);
 
   // --- 3. Чат үүсгэх функц ---
   const handleStartChat = async (startupId: number) => {
@@ -144,15 +181,6 @@ export default function InvestPage() {
     return item ? item.text_content : defaultValue;
   };
 
-  const filteredStartups = startups.filter((s) => {
-    const matchesSearch = s.startup_name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesIndustry =
-      selectedIndustry === "" || s.industry === selectedIndustry;
-    return matchesSearch && matchesIndustry;
-  });
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] transition-colors duration-500 font-sans">
       <div className="relative max-w-7xl mx-auto px-6 py-20">
@@ -188,12 +216,23 @@ export default function InvestPage() {
                 </option>
               ))}
             </select>
-            <input
-              type="text"
-              placeholder="Төсөл хайх..."
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-blue-500 min-w-[250px]"
-            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={minFund}
+                onChange={(e) => setMinFund(e.target.value)}
+                className="px-4 py-3 rounded-xl border dark:bg-slate-900 w-28"
+              />
+
+              <input
+                type="number"
+                placeholder="Max"
+                value={maxFund}
+                onChange={(e) => setMaxFund(e.target.value)}
+                className="px-4 py-3 rounded-xl border dark:bg-slate-900 w-28"
+              />
+            </div>
           </div>
         </div>
 
