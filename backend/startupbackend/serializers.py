@@ -10,7 +10,8 @@ class CustomUserSerializer(UserSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
 class CustomUserCreateSerializer(UserCreateSerializer):
-
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
     class Meta(UserCreateSerializer.Meta):
         model = CustomUser
         fields = ("id", "username", "first_name","last_name", "email", "password","role")
@@ -18,11 +19,11 @@ class CustomUserCreateSerializer(UserCreateSerializer):
     def create(self, validated_data):
         user = CustomUser.objects.create_user(
             username=validated_data["username"],
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
-            email=validated_data["email"],
-            password=validated_data["password"],
-            role=validated_data.get("role"),
+        first_name=validated_data.get("first_name", ""),
+        last_name=validated_data.get("last_name", ""),
+        email=validated_data["email"],
+        password=validated_data["password"],
+        role=validated_data.get("role"),
         )
         user.set_password(validated_data["password"])
         user.save()
@@ -55,6 +56,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         return value
     
 class InvestorSerializer(serializers.ModelSerializer):
+    invested_count = serializers.IntegerField(read_only=True)
     class Meta:
         model = Investor
         # Бүх талбарыг авахын оронд талбаруудыг нэрлэж өгөх нь аюулгүй байдалд тустай

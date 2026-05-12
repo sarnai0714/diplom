@@ -46,7 +46,6 @@ export default function StartupDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [startup, setStartup] = useState<Startup | null>(null);
-  const [wishlist, setWishlist] = useState<number[]>([]);
 
   const formatMoney = (amount: number | string) => {
     const num = Number(amount || 0);
@@ -72,33 +71,6 @@ export default function StartupDetailPage() {
 
     fetchData();
   }, [id]);
-
-  const toggleWishlist = async (startupId: number) => {
-    try {
-      const token = localStorage.getItem("access");
-      const response = await fetch("http://127.0.0.1:8000/api/wishlist/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          startup: startupId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setWishlist((prev) => [...prev, startupId]);
-      } else {
-        console.log(data);
-        alert(data.non_field_errors?.[0] || "Алдаа гарлаа");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   if (loading) {
     return (

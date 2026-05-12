@@ -193,17 +193,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # ----------------------------
         # 2. QUERY PARAM FILTERS
         # ----------------------------
-        search = self.request.query_params.get("search")
         industry = self.request.query_params.get("industry")
         min_fund = self.request.query_params.get("min_fund")
         max_fund = self.request.query_params.get("max_fund")
-
-        # Search (startup name + description)
-        if search:
-            queryset = queryset.filter(
-                Q(startup_name__icontains=search) |
-                Q(description__icontains=search)
-            )
 
         # Industry filter
         if industry:
@@ -279,17 +271,28 @@ class MyStartupViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return Startup.objects.filter(user=self.request.user)
 class InvestorViewSet(viewsets.ModelViewSet):
-    queryset = Investor.objects.all()
     serializer_class = InvestorSerializer
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
+    def get_queryset(self):
+        return Investor.objects.annotate(
+            invested_count=Count('investments', distinct=True)
+        )
+
     def create(self, request, *args, **kwargs):
         reg_num = request.data.get('registration_number')
 
-        if Investor.objects.filter(user=request.user, registration_number=reg_num).exists():
+        # 1 user = 1 investor only
+        if Investor.objects.filter(user=request.user).exists():
             return Response(
-                {"detail": "Та энэ регистрийн дугаартай байгууллагыг аль хэдийн бүртгэсэн байна."},
+                {"detail": "Та аль хэдийн investor profile үүсгэсэн байна."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if Investor.objects.filter(registration_number=reg_num).exists():
+            return Response(
+                {"detail": "Энэ регистрийн дугаар бүртгэлтэй байна."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -307,15 +310,15 @@ class InvestorViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
+        user = self.request.user
+
+        # role зөв тохируулах
+        if user.role != "investor":
+            user.role = "investor"
+            user.save()
+
         with transaction.atomic():
-            user = self.request.user
-
-            if user.role != 'investor':
-                user.role = 'investor'
-                user.save()
-
             serializer.save(user=user)
-
 class InvestmentViewSet(viewsets.ModelViewSet):
     queryset = Investment.objects.all().order_by('-created_at')
     serializer_class = InvestmentSerializer

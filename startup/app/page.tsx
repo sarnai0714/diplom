@@ -50,24 +50,6 @@ const HomePage = () => {
     router.push("/hh");
   };
 
-  // Admin route хамгаалалт
-  const handleAdminRoute = () => {
-    const token = localStorage.getItem("access");
-    const role = localStorage.getItem("role");
-
-    if (!token || token === "undefined" || token === "null") {
-      router.push("/login");
-      return;
-    }
-
-    if (role?.toLowerCase().trim() !== "admin") {
-      alert("Энэ хэсэг зөвхөн Admin хэрэглэгчдэд зориулагдсан.");
-      return;
-    }
-
-    router.push("/admin");
-  };
-
   const handleRoute = (targetRole: string, path: string) => {
     const token = localStorage.getItem("access");
     const role = localStorage.getItem("role");

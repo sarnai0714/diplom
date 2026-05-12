@@ -13,6 +13,7 @@ import {
   Link,
   Lock,
   ChevronDown,
+  Rocket,
   MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,6 +31,8 @@ interface Investor {
 
   latitude?: number;
   longitude?: number;
+
+  invested_count?: number;
 }
 
 interface MyStartup {
@@ -433,15 +436,26 @@ export default function InvestorsSection() {
                   </a>
                 </div>
 
-                <div className="mb-8 mt-8 p-5 bg-slate-50/50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                  <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm">
-                    <TrendingUp size={18} className="text-emerald-500" />
+                <div className="mb-8 mt-8 flex items-stretch gap-3">
+                  <div className="flex-1 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shrink-0">
+                      <Rocket size={18} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-400 uppercase font-black">
+                        Гарааны бизнес
+                      </p>
+                      <p className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                        {investor.invested_count || 0}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-slate-400 uppercase font-black mb-1 tracking-widest">
+
+                  <div className="flex-1 p-3.5 rounded-2xl bg-slate-900 dark:bg-blue-600 flex flex-col justify-center">
+                    <p className="text-[9px] text-slate-400 dark:text-blue-100 uppercase font-black mb-1">
                       Хөрөнгө оруулалт
                     </p>
-                    <p className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
+                    <p className="text-sm font-black text-white tabular-nums truncate">
                       {formatMoney(investor.investment_range)}
                     </p>
                   </div>
@@ -462,7 +476,7 @@ export default function InvestorsSection() {
                   Холбоо барих
                 </button>
                 <button
-                  onClick={() => handleOpenMap(investor)} // Функцийг энд дуудна
+                  onClick={() => handleOpenMap(investor)}
                   className="flex-1 h-14 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hover:scale-[1.02]"
                 >
                   <MapPin

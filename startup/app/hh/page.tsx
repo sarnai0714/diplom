@@ -240,6 +240,13 @@ export default function OrgRegistrationPage() {
                 )}
 
                 <AnimatePresence mode="wait">
+                  {/* Буцах товч */}
+                  <Link
+                    href="/"
+                    className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Link>
                   {step === 1 && (
                     <motion.div
                       key="step1"
@@ -523,24 +530,21 @@ export default function OrgRegistrationPage() {
               animate={{ scale: 1, opacity: 1 }}
               className="max-w-md mx-auto text-center"
             >
-              <div className="bg-white dark:bg-slate-900/50 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[3rem] p-12 shadow-2xl">
-                <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-600" />
-                </div>
-                <h2 className="text-3xl font-black mb-4 uppercase italic">
-                  Хүсэлт хүлээн авлаа
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed font-medium">
-                  Таны бүртгэлийн мэдээллийг админ баг 24-48 цагийн дотор хянаж,
-                  хариу мэйл илгээх болно.
-                </p>
-                <Link
-                  href="/"
-                  className="inline-flex items-center justify-center gap-2 bg-slate-900 dark:bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.05] active:scale-95 transition-all shadow-2xl shadow-blue-600/20"
-                >
-                  <Home className="w-5 h-5" /> Нүүр хуудас руу
-                </Link>
+              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <CheckCircle2 className="w-12 h-12 text-emerald-600" />
               </div>
+              <h2 className="text-3xl font-black mb-4 uppercase italic">
+                Хүсэлт хүлээн авлаа
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed font-medium">
+                Таны мэдээллийг хүлээн авлаа. Манай баг удахгүй холбогдох болно.
+              </p>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 bg-slate-900 dark:bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.05] active:scale-95 transition-all shadow-2xl shadow-blue-600/20"
+              >
+                <Home className="w-5 h-5" /> Нүүр хуудас руу
+              </Link>
             </motion.div>
           )}
         </AnimatePresence>

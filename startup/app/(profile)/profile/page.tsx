@@ -131,45 +131,77 @@ const ProfilePage = () => {
 
           {/* FORM */}
           <div className="grid grid-cols-2 gap-8">
-            {/* username */}
-            <input
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full h-14 rounded-full border px-6 dark:bg-slate-900 dark:text-white"
-              placeholder="Username"
-            />
+            {/* last name */}
+            <div>
+              <label className="block mb-2 text-sm font-medium dark:text-white">
+                Овог
+              </label>
+
+              <input
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                className="w-full h-14 rounded-full border px-6 dark:bg-slate-900 dark:text-white"
+                placeholder="Овог"
+              />
+            </div>
 
             {/* role */}
-            <input
-              value={formData.role}
-              disabled
-              className="w-full h-14 rounded-full border px-6 bg-gray-100 dark:bg-slate-800 dark:text-white"
-            />
+            <div>
+              <label className="block mb-2 text-sm font-medium dark:text-white">
+                Role
+              </label>
 
-            <input
-              name="first_name"
-              value={formData.first_name}
-              onChange={handleChange}
-              className="w-full h-14 rounded-full border px-6 dark:bg-slate-900 dark:text-white"
-              placeholder="Нэр"
-            />
+              <input
+                value={formData.role}
+                disabled
+                className="w-full h-14 rounded-full border px-6 bg-gray-100 dark:bg-slate-800 dark:text-white"
+              />
+            </div>
 
-            <input
-              name="last_name"
-              value={formData.last_name}
-              onChange={handleChange}
-              className="w-full h-14 rounded-full border px-6 dark:bg-slate-900 dark:text-white"
-              placeholder="Овог"
-            />
+            {/* first name */}
+            <div>
+              <label className="block mb-2 text-sm font-medium dark:text-white">
+                Нэр
+              </label>
 
-            <input
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full h-14 rounded-full border px-6 col-span-2 dark:bg-slate-900 dark:text-white"
-              placeholder="Email"
-            />
+              <input
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                className="w-full h-14 rounded-full border px-6 dark:bg-slate-900 dark:text-white"
+                placeholder="Нэр"
+              />
+            </div>
+            {/* username */}
+            <div>
+              <label className="block mb-2 text-sm font-medium dark:text-white">
+                Хэрэглэгчийн нэр
+              </label>
+
+              <input
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className="w-full h-14 rounded-full border px-6 dark:bg-slate-900 dark:text-white"
+                placeholder="Username"
+              />
+            </div>
+
+            {/* email */}
+            <div className="col-span-2">
+              <label className="block mb-2 text-sm font-medium dark:text-white">
+                Email
+              </label>
+
+              <input
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full h-14 rounded-full border px-6 dark:bg-slate-900 dark:text-white"
+                placeholder="Email"
+              />
+            </div>
           </div>
 
           {/* BUTTONS */}

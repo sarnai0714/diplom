@@ -116,9 +116,9 @@ const ReportDashboard = () => {
           </h1>
         </div>
 
-        <button className="flex items-center gap-2 bg-slate-200 dark:bg-white/5 hover:bg-slate-300 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 px-5 py-3 rounded-2xl transition-all active:scale-95 font-medium text-slate-900 dark:text-white">
+        {/* <button className="flex items-center gap-2 bg-slate-200 dark:bg-white/5 hover:bg-slate-300 dark:hover:bg-white/10 border border-slate-300 dark:border-white/10 px-5 py-3 rounded-2xl transition-all active:scale-95 font-medium text-slate-900 dark:text-white">
           <Download size={18} /> Тайлан татах (PDF)
-        </button>
+        </button> */}
       </div>
 
       {/* STATS */}
@@ -186,7 +186,7 @@ const ReportDashboard = () => {
         {/* LINE CHART */}
         <div className="glass-card p-8">
           <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-8">
-            Төслийн өсөлт
+            Хэрэглэгчийн өсөлт
           </h3>
 
           <div className="h-[350px]">
